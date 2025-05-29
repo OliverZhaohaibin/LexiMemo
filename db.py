@@ -197,7 +197,7 @@ def save_word(book_name, color, data, sync_to_total=True):
         if sync_to_total and book_name != "总单词册":
             sync_data        = data.copy()
             sync_data["备注"] = ""          # 总册不保留备注
-            save_word("总单词册", "#FF0000", sync_data, sync_to_total=False)
+            save_word_to_total(sync_data)
 
     except Exception as e:
         raise Exception(f"保存单词到数据库失败：{str(e)}")

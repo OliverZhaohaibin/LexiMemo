@@ -5,16 +5,15 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QScrollArea, QMessageBox, QMenu, QPushButton, \
     QListWidget
 from PySide6.QtWidgets import QGridLayout, QLabel, QDialog, QLineEdit, QColorDialog  # for the dialog
-import json
 
 from Folder_UI.common.folderUI_API import FolderOperationMixin, FolderLayoutMixin,FolderHintMixin,FolderAnimationMixin
 from font import normal_font
-from inside import WordBookApp  # presumably for opening a word book content window
+from UI.word_book_window import WordBookWindow  # presumably for opening a word book content window
 from WordBookButton import WordBookButton  # use our modified WordBookButton
 from Folder_UI.folder_background import update_all_folder_backgrounds
 from Folder_UI.utils import calculate_button_distance, is_button_in_frame
 from styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, LINE_EDIT_STYLE, TEXT_EDIT_STYLE
-
+from services.cover_layout_service import CoverLayoutService as CLS
 
 class NewWordBookDialog(QDialog):
     def __init__(self):
@@ -216,7 +215,7 @@ class WordAppCover(
         {word_lower: [(book_name, color, absolute_path), …]}
         """
         import os
-        from db import load_words
+        from services.wordbook_service import WordBookService as WS
 
         base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
         books_dir = os.path.join(base_dir, "books")
@@ -232,7 +231,7 @@ class WordAppCover(
             path = os.path.join(books_dir, folder)
 
             try:
-                words = load_words(book_name, book_color)
+                words = WS.list_words(book_name, book_color)
             except Exception as e:
                 print(f"加载单词失败 {book_name}: {e}")
                 continue
@@ -321,7 +320,7 @@ class WordAppCover(
             return
 
         print(f"打开单词本: {path} (目标单词: {target_word})")
-        self.word_book_app = WordBookApp(path, target_word=target_word)
+        self.word_book_app = WordBookWindow(path, target_word)
         self.word_book_app.show()
 
     # ------------------------------------------------------------------ #
@@ -419,22 +418,12 @@ class WordAppCover(
             self.hide_frame()
             self.proximity_pair = None
 
-    # ------------------------------------------------------------
-    #  布局持久化：路径工具
-    # ------------------------------------------------------------
-    def get_layout_file_path(self) -> str:
-        """返回 cover 布局 JSON 的绝对路径"""
-        base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-        return os.path.join(base_dir, "cover_layout.json")
 
     # ------------------------------------------------------------
     #  保存当前布局 → JSON
     # ------------------------------------------------------------
     def save_layout_to_json(self) -> None:
-        """
-        把当前按钮顺序 & 文件夹结构写入 cover_layout.json
-        调用时机：退出编辑模式 / 应用关闭前
-        """
+        """把当前按钮顺序 & 文件夹结构写入持久化层"""
         layout_items = []
         for btn in self.buttons:
             if getattr(btn, "is_folder", False):
@@ -442,19 +431,17 @@ class WordAppCover(
                     "type": "folder",
                     "name": btn.text(),
                     "color": getattr(btn, "color", "#a3d2ca"),
-                    "is_expanded": getattr(btn, "is_expanded", False),  # 保存展开状态
-                    "sub_books": [sub.text() for sub in btn.sub_buttons]
+                    "is_expanded": getattr(btn, "is_expanded", False),
+                    "sub_books": [sub.text() for sub in btn.sub_buttons],
                 })
-            else:                 # 普通单词本按钮
+            else:
                 layout_items.append({
                     "type": "wordbook",
                     "name": btn.text(),
-                    "color": getattr(btn, "color", "#a3d2ca")
+                    "color": getattr(btn, "color", "#a3d2ca"),
                 })
-
         try:
-            with open(self.get_layout_file_path(), "w", encoding="utf-8") as f:
-                json.dump({"layout": layout_items}, f, ensure_ascii=False, indent=2)
+            CLS.save(layout_items)
             print("✅  Cover 布局已保存")
         except Exception as e:
             print(f"❌  保存 cover 布局失败: {e}")
@@ -464,20 +451,12 @@ class WordAppCover(
     # ------------------------------------------------------------
     def apply_saved_layout(self) -> None:
         """根据 cover_layout.json 重建按钮顺序 / 文件夹层级，并确保子按钮可点击打开单词册"""
-        import os, sys, json
-
-        path = self.get_layout_file_path()
-        if not os.path.exists(path):
-            return  # 首次运行，文件尚不存在
+        import os, sys
 
         # ---------- 1. 读取 JSON ----------
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            layout_items = data.get("layout", [])
-        except Exception as e:
-            print(f"❌  读取 cover 布局失败: {e}")
-            return
+        layout_items = CLS.load()
+        if not layout_items:
+            return  # 没有保存过布局
 
         # ---------- 2. 现有按钮索引 ----------
         name_to_btn = {btn.text(): btn for btn in self.buttons}
@@ -715,7 +694,7 @@ class WordAppCover(
             pass
 
         # 创建并传递 target_word
-        self.word_book_app = WordBookApp(path, target_word=target_word)
+        self.word_book_app = WordBookWindow(path, target_word)
         self.word_book_app.show()
 
     # ------------------------------------------------------------
@@ -789,17 +768,15 @@ class WordAppCover(
                     shutil.rmtree(os.path.join(books_dir, folder), ignore_errors=True)
 
         # ---------- D. 更新 cover_layout.json ----------
-        layout_path = self.get_layout_file_path()
-        if os.path.exists(layout_path):
-            try:
-                with open(layout_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except Exception as e:
-                print(f"❌  读取布局失败: {e}")
-                data = {}
+        try:
+            layout_items = CLS.load()  # ① 读取持久化布局
+        except Exception as e:
+            print(f"❌  读取布局失败: {e}")
+            layout_items = []
 
+        if layout_items:
             new_items = []
-            for item in data.get("layout", []):
+            for item in layout_items:
                 itype, iname = item.get("type"), item.get("name")
 
                 # —— 1. 删除整个文件夹 → 子按钮顶层化 —— #
@@ -808,7 +785,7 @@ class WordAppCover(
                         new_items.append({
                             "type": "wordbook",
                             "name": sub,
-                            "color": item.get("color", "#a3d2ca")
+                            "color": item.get("color", "#a3d2ca"),
                         })
                     continue  # 跳过原文件夹条目
 
@@ -829,15 +806,13 @@ class WordAppCover(
                         new_items.append({
                             "type": "wordbook",
                             "name": remaining,
-                            "color": item.get("color", "#a3d2ca")
+                            "color": item.get("color", "#a3d2ca"),
                         })
                         continue
 
                 new_items.append(item)
 
-            data["layout"] = new_items
-            with open(layout_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
+            CLS.save(new_items)  # ② 写回持久化
 
         # ---------- E. 刷新界面 ----------
         if self.edit_mode:

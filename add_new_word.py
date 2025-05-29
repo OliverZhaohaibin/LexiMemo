@@ -11,7 +11,7 @@ from datetime import datetime
 
 from font import meaning_font, word_font
 from utils import get_tags_path, get_total_tags_path
-from business_logic import save_word
+from services.wordbook_service import WordBookService as WS
 from styles import GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, GRAY_INPUT_STYLE, GRAY_TEXT_EDIT_STYLE, PRIMARY_BUTTON_STYLE, \
     SECONDARY_BUTTON_STYLE
 
@@ -319,7 +319,7 @@ class WordEntryUI(QWidget):
                 "时间": timestamp,
             }
 
-            save_word(self.book_name, self.book_color, data)
+            WS.save_word(self.book_name, self.book_color, data)
 
             # ---------- 5. 成功操作 ----------
             self.save_successful.emit(data)  # 发射信号，供父窗口刷新

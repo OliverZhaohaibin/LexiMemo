@@ -1,0 +1,14 @@
+/books/
+/icon/
+/.idea/
+/tools/
+/.gitignore/
+/__pycache__/
+/txt_copies/
+/build/
+/dist/
+/打包/
+/wordapp/
+/cover_layout.json
+Folder_UI/__pycache__/button.cpython-312.pyc and b/Folder_UI/__pycache__/button.cpython-312.pyc
+/Folder_UI/common/__pycache__/folderUI_API.cpython-312.pyc

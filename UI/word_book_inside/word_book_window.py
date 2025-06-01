@@ -4,9 +4,9 @@ import os
 from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QApplication
 from PySide6.QtCore import Qt
 
-from UI.word_list_panel import WordListPanel
-from UI.word_detail_panel import WordDetailPanel
-from UI.word_edit_panel import WordEditPanel
+from UI.word_book_inside.word_list_panel import WordListPanel
+from UI.word_book_inside.word_detail_panel import WordDetailPanel
+from UI.word_book_inside.word_edit_panel import WordEditPanel
 from services.wordbook_service import WordBookService as WS
 
 

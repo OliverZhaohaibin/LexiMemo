@@ -1,4 +1,5 @@
-from Folder_UI.button import DraggableButton
+from .button import DraggableButton
+
 
 
 def merge_buttons_to_folder(btn1, btn2, central_widget, app):
@@ -116,3 +117,19 @@ def check_and_remove_folder_if_needed(folder_btn, buttons_list):
         folder_btn.hide()
         return True
     return False
+class FolderOperationMixin:
+    """封装文件夹增删改操作的工具混入。"""
+
+    merge_buttons_to_folder          = staticmethod(merge_buttons_to_folder)
+    add_button_to_folder             = staticmethod(add_button_to_folder)
+    remove_sub_button_from_folder    = staticmethod(remove_sub_button_from_folder)
+    check_and_remove_folder_if_needed = staticmethod(check_and_remove_folder_if_needed)
+
+
+__all__ = [
+    "FolderOperationMixin",
+    "merge_buttons_to_folder",
+    "add_button_to_folder",
+    "remove_sub_button_from_folder",
+    "check_and_remove_folder_if_needed",
+]

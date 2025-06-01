@@ -1,13 +1,12 @@
 from PySide6.QtWidgets import QPushButton, QLineEdit, QMessageBox
-from PySide6.QtGui import QIcon, QColor, QPainter, QPixmap, QFont
-from PySide6.QtWidgets import QStyleOptionButton, QStyle
+from PySide6.QtGui import QColor, QPainter, QPixmap, QFont
 from PySide6.QtCore import Qt, QRect, QPoint, QPropertyAnimation, QTimer, QEasingCurve, Property
 from PIL import Image
 import os
 import sys
 from font import normal_font
-from Folder_UI.button import DraggableButton
-from Folder_UI.layout import calculate_folder_area
+from UI.Folder_UI.button import DraggableButton
+from UI.Folder_UI._layout import calculate_folder_area
 
 
 class WordBookButton(DraggableButton):
@@ -177,7 +176,7 @@ class WordBookButton(DraggableButton):
         if not sub_icon_paths:  # 没有可用子图标则跳过
             return
 
-        from Folder_UI.utils import create_folder_icon
+        from UI.Folder_UI._utils import create_folder_icon
         icon_path = create_folder_icon(
             sub_icon_paths=sub_icon_paths,
             folder_name=self.text()

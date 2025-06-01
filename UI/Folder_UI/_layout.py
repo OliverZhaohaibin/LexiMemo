@@ -105,3 +105,21 @@ def calculate_reorder_area(folder_button, button_width, button_height, spacing, 
     height = (rows * (button_height + folder_spacing)) + folder_spacing * 1.01
 
     return QRect(left, top, width, height)
+
+class FolderLayoutMixin:
+    """为任意 QWidget 子类提供布局计算工具的无状态混入。"""
+
+    # 直接把函数挂成静态方法，避免重复实现
+    calculate_main_button_positions = staticmethod(calculate_main_button_positions)
+    calculate_sub_button_positions  = staticmethod(calculate_sub_button_positions)
+    calculate_folder_area           = staticmethod(calculate_folder_area)
+    calculate_reorder_area          = staticmethod(calculate_reorder_area)
+
+
+__all__ = [
+    "FolderLayoutMixin",
+    "calculate_main_button_positions",
+    "calculate_sub_button_positions",
+    "calculate_folder_area",
+    "calculate_reorder_area",
+]

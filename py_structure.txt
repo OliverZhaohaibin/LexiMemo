@@ -1,7 +1,5 @@
     add_new_word.py
-    business_logic.py
     cover.py
-    data_access.py
     db.py
     db_memory.py
     font.py
@@ -13,17 +11,6 @@
     WordBookButton.py
     controllers/
         cover_controller.py
-    Folder_UI/
-        animations.py
-        app.py
-        button.py
-        folder_background.py
-        folder_operations.py
-        frame.py
-        layout.py
-        utils.py
-        common/
-            folderUI_API.py
     repositories/
         __init__.py
         layout_repository.py

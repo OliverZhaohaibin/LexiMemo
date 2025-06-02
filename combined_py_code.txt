@@ -1,68 +1,3 @@
-MultiSelectComboBox.py开始
-# MultiSelectComboBox.py
-from PySide6.QtGui import QStandardItemModel, QStandardItem
-from PySide6.QtWidgets import QComboBox
-from PySide6.QtCore import Qt
-from db import get_all_tags
-
-
-class MultiSelectComboBox(QComboBox):
-    def __init__(self, parent=None, book_name="总单词册", book_color="#FF0000"):
-        super(MultiSelectComboBox, self).__init__(parent)
-        self.book_name = book_name
-        self.book_color = book_color
-        self.setModel(QStandardItemModel(self))
-        self.add_all_tags_item()
-        self.all_tags_item_changed = False
-        self.model().itemChanged.connect(self.handle_item_changed)
-
-    def add_all_tags_item(self):
-        self.all_tags_item = QStandardItem("全部标签")
-        self.all_tags_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        self.all_tags_item.setData(Qt.Unchecked, Qt.CheckStateRole)
-        self.model().appendRow(self.all_tags_item)
-
-    def addItem(self, text, checked=False):
-        if text == "全部标签":
-            return
-        item = QStandardItem(text)
-        item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        item.setData(Qt.Checked if checked else Qt.Unchecked, Qt.CheckStateRole)
-        self.model().appendRow(item)
-
-    def selectedItems(self):
-        selected = []
-        for index in range(1, self.model().rowCount()):  # Skip "全部标签" at index 0
-            item = self.model().item(index)
-            if item.checkState() == Qt.Checked:
-                selected.append(item.text())
-        return selected
-
-    def clear(self):
-        self.model().clear()
-        self.add_all_tags_item()
-
-    def allItems(self):
-        return get_all_tags(self.book_name, self.book_color)
-
-    def handle_item_changed(self, item):
-        if self.all_tags_item_changed:
-            return
-        self.all_tags_item_changed = True
-        try:
-            if item == self.all_tags_item:
-                state = item.checkState()
-                for i in range(1, self.model().rowCount()):
-                    self.model().item(i).setCheckState(state)
-            elif item != self.all_tags_item:
-                if item.checkState() == Qt.Unchecked and self.all_tags_item.checkState() == Qt.Checked:
-                    self.all_tags_item.setCheckState(Qt.Unchecked)
-                elif all(self.model().item(i).checkState() == Qt.Checked for i in range(1, self.model().rowCount())):
-                    self.all_tags_item.setCheckState(Qt.Checked)
-        finally:
-            self.all_tags_item_changed = False
-MultiSelectComboBox.py结束
-
 UI/Folder_UI/_animations.py开始
 # UI/Folder_UI/_animations.py开始
 from PySide6.QtCore import QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QPoint, QRect, QTimer
@@ -721,7 +656,7 @@ class FolderHintMixin:
         )
         margin = 10
         # The reorder frame should span the width of the scroll content
-        # and cover the vertical extent of sub-buttons.
+        # and word_book_cover the vertical extent of sub-buttons.
         # Top starts from the top of the sub-button area.
         # If no sub_buttons, use parent_folder's bottom as reference.
         if parent_folder.sub_buttons:
@@ -1914,6 +1849,71 @@ class DraggableButton(QPushButton):
 
 UI/Folder_UI/button.py结束
 
+UI/MultiSelectComboBox.py开始
+# MultiSelectComboBox.py
+from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtWidgets import QComboBox
+from PySide6.QtCore import Qt
+from db import get_all_tags
+
+
+class MultiSelectComboBox(QComboBox):
+    def __init__(self, parent=None, book_name="总单词册", book_color="#FF0000"):
+        super(MultiSelectComboBox, self).__init__(parent)
+        self.book_name = book_name
+        self.book_color = book_color
+        self.setModel(QStandardItemModel(self))
+        self.add_all_tags_item()
+        self.all_tags_item_changed = False
+        self.model().itemChanged.connect(self.handle_item_changed)
+
+    def add_all_tags_item(self):
+        self.all_tags_item = QStandardItem("全部标签")
+        self.all_tags_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        self.all_tags_item.setData(Qt.Unchecked, Qt.CheckStateRole)
+        self.model().appendRow(self.all_tags_item)
+
+    def addItem(self, text, checked=False):
+        if text == "全部标签":
+            return
+        item = QStandardItem(text)
+        item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        item.setData(Qt.Checked if checked else Qt.Unchecked, Qt.CheckStateRole)
+        self.model().appendRow(item)
+
+    def selectedItems(self):
+        selected = []
+        for index in range(1, self.model().rowCount()):  # Skip "全部标签" at index 0
+            item = self.model().item(index)
+            if item.checkState() == Qt.Checked:
+                selected.append(item.text())
+        return selected
+
+    def clear(self):
+        self.model().clear()
+        self.add_all_tags_item()
+
+    def allItems(self):
+        return get_all_tags(self.book_name, self.book_color)
+
+    def handle_item_changed(self, item):
+        if self.all_tags_item_changed:
+            return
+        self.all_tags_item_changed = True
+        try:
+            if item == self.all_tags_item:
+                state = item.checkState()
+                for i in range(1, self.model().rowCount()):
+                    self.model().item(i).setCheckState(state)
+            elif item != self.all_tags_item:
+                if item.checkState() == Qt.Unchecked and self.all_tags_item.checkState() == Qt.Checked:
+                    self.all_tags_item.setCheckState(Qt.Unchecked)
+                elif all(self.model().item(i).checkState() == Qt.Checked for i in range(1, self.model().rowCount())):
+                    self.all_tags_item.setCheckState(Qt.Checked)
+        finally:
+            self.all_tags_item_changed = False
+UI/MultiSelectComboBox.py结束
+
 UI/__init__.py开始
 from UI.word_book_inside.word_book_window import WordBookWindow
 from UI.word_book_inside.word_detail_panel import WordDetailPanel
@@ -1929,7 +1929,65 @@ __all__ = [
 
 UI/__init__.py结束
 
-UI/cover_content.py开始
+UI/new_wordbook_dialog.py开始
+# UI/new_wordbook_dialog.py
+from PySide6.QtWidgets import (
+    QDialog, QVBoxLayout, QLineEdit, QPushButton, QDialogButtonBox,
+    QColorDialog, QMessageBox
+)
+from PySide6.QtGui import QColor
+
+
+class NewWordBookDialog(QDialog):
+    """输入『名称 + 颜色』的简单对话框"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("新建单词本")
+        self.resize(320, 150)
+
+        self._build_ui()
+        self.book_name: str | None = None
+        self.book_color: str = "#a3d2ca"   # 默认色
+
+    # ------------------------------------------------------------
+    def _build_ui(self):
+        lay = QVBoxLayout(self)
+
+        self.name_edit = QLineEdit(placeholderText="单词本名称")
+        lay.addWidget(self.name_edit)
+
+        self.color_btn = QPushButton("选择颜色 (#a3d2ca)")
+        self.color_btn.clicked.connect(self._choose_color)
+        lay.addWidget(self.color_btn)
+
+        btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btns.accepted.connect(self._accept)
+        btns.rejected.connect(self.reject)
+        lay.addWidget(btns)
+
+    # ------------------------------------------------------------
+    def _choose_color(self):
+        c = QColorDialog.getColor(QColor(self.book_color), self, "选择颜色")
+        if c.isValid():
+            self.book_color = c.name()
+            self.color_btn.setText(f"选择颜色 ({self.book_color})")
+            self.color_btn.setStyleSheet(f"background:{self.book_color}")
+
+    def _accept(self):
+        name = self.name_edit.text().strip()
+        if not name:
+            QMessageBox.warning(self, "错误", "名称不能为空！")
+            return
+        self.book_name = name
+        self.accept()
+UI/new_wordbook_dialog.py结束
+
+UI/word_book_cover/__init__.py开始
+
+UI/word_book_cover/__init__.py结束
+
+UI/word_book_cover/cover_content.py开始
 # UI/cover_content.py开始
 from __future__ import annotations
 from typing import TYPE_CHECKING
@@ -2061,9 +2119,9 @@ class CoverContent(
         return super().eventFilter(obj, ev)
 
 # UI/cover_content.py结束
-UI/cover_content.py结束
+UI/word_book_cover/cover_content.py结束
 
-UI/cover_view.py开始
+UI/word_book_cover/cover_view.py开始
 # ui/cover_view.py
 from __future__ import annotations
 
@@ -2073,7 +2131,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
     QPushButton, QLineEdit, QListWidget, QLabel
 )
-from UI.cover_content import CoverContent
+from UI.word_book_cover.cover_content import CoverContent
 from styles import SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE
 
 
@@ -2229,61 +2287,7 @@ class CoverView(QWidget):
 
         return super().eventFilter(obj, event)
 
-UI/cover_view.py结束
-
-UI/new_wordbook_dialog.py开始
-# UI/new_wordbook_dialog.py
-from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QLineEdit, QPushButton, QDialogButtonBox,
-    QColorDialog, QMessageBox
-)
-from PySide6.QtGui import QColor
-
-
-class NewWordBookDialog(QDialog):
-    """输入『名称 + 颜色』的简单对话框"""
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("新建单词本")
-        self.resize(320, 150)
-
-        self._build_ui()
-        self.book_name: str | None = None
-        self.book_color: str = "#a3d2ca"   # 默认色
-
-    # ------------------------------------------------------------
-    def _build_ui(self):
-        lay = QVBoxLayout(self)
-
-        self.name_edit = QLineEdit(placeholderText="单词本名称")
-        lay.addWidget(self.name_edit)
-
-        self.color_btn = QPushButton("选择颜色 (#a3d2ca)")
-        self.color_btn.clicked.connect(self._choose_color)
-        lay.addWidget(self.color_btn)
-
-        btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        btns.accepted.connect(self._accept)
-        btns.rejected.connect(self.reject)
-        lay.addWidget(btns)
-
-    # ------------------------------------------------------------
-    def _choose_color(self):
-        c = QColorDialog.getColor(QColor(self.book_color), self, "选择颜色")
-        if c.isValid():
-            self.book_color = c.name()
-            self.color_btn.setText(f"选择颜色 ({self.book_color})")
-            self.color_btn.setStyleSheet(f"background:{self.book_color}")
-
-    def _accept(self):
-        name = self.name_edit.text().strip()
-        if not name:
-            QMessageBox.warning(self, "错误", "名称不能为空！")
-            return
-        self.book_name = name
-        self.accept()
-UI/new_wordbook_dialog.py结束
+UI/word_book_cover/cover_view.py结束
 
 UI/word_book_inside/word_book_window.py开始
 from __future__ import annotations
@@ -2533,15 +2537,14 @@ from typing import List, Tuple
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QGridLayout, QLineEdit, QTextEdit, QLabel, QPushButton, QHBoxLayout, QMessageBox
 )
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal
 
 from styles import (
     GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, LINE_EDIT_STYLE, TEXT_EDIT_STYLE,
-    PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE
+    SECONDARY_BUTTON_STYLE
 )
 from font import meaning_font, sentence_font, sentence_font_platte
-from MultiSelectComboBox import MultiSelectComboBox
-from utils import get_tags_path
+from UI.MultiSelectComboBox import MultiSelectComboBox
 
 
 class WordEditPanel(QWidget):
@@ -2682,7 +2685,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt, QTimer
 
-from MultiSelectComboBox import MultiSelectComboBox
+from UI.MultiSelectComboBox import MultiSelectComboBox
 from services.wordbook_service import WordBookService as WS
 from styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, LINE_EDIT_STYLE
 from font import list_word_font
@@ -2928,7 +2931,7 @@ class WordBookButton(QPushButton):
         if os.path.exists(icon_path):
             return icon_path
 
-        base_image_path = os.path.join(base_dir, "icon", "cover.webp")
+        base_image_path = os.path.join(base_dir, "icon", "word_book_cover.webp")
         if not os.path.exists(base_image_path):
             pixmap = QPixmap(QSize(self.icon_size, self.icon_size))
             pixmap.fill(QColor(color))
@@ -3771,7 +3774,7 @@ from PySide6.QtCore import QObject, QEvent, Slot, Qt, QUrl, QTimer  # Added QTim
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
 
-from UI.cover_view import CoverView
+from UI.word_book_cover.cover_view import CoverView
 from services.folder_service import FolderService
 from services.cover_layout_service import CoverLayoutService
 from WordBookButton import WordBookButton
@@ -4100,10 +4103,10 @@ class CoverController(QObject):
 controllers/cover_controller.py结束
 
 cover.py开始
-# cover.py – 程序入口
+# word_book_cover.py – 程序入口
 import sys
 from PySide6.QtWidgets import QApplication
-from UI.cover_view import CoverView
+from UI.word_book_cover.cover_view import CoverView
 from controllers.cover_controller import CoverController   # ← 路径未变
 
 def main() -> None:
@@ -5414,7 +5417,7 @@ class LayoutRepository:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump({"layout": layout_items}, f, ensure_ascii=False, indent=2)
         except Exception as exc:
-            raise RuntimeError(f"保存 cover 布局失败: {exc}") from exc
+            raise RuntimeError(f"保存 word_book_cover 布局失败: {exc}") from exc
 
 repositories/layout_repository.py结束
 
@@ -5567,14 +5570,13 @@ import sys
 from typing import List, Dict, Any, TYPE_CHECKING
 
 from WordBookButton import WordBookButton
-from UI.Folder_UI.api import update_all_folder_backgrounds
 
 if TYPE_CHECKING:
-    from UI.cover_content import CoverContent  # For type hinting
+    from UI.word_book_cover.cover_content import CoverContent  # For type hinting
 
 
 class FolderService:
-    """Business‑logic layer for the cover page operations related to folders and buttons."""
+    """Business‑logic layer for the word_book_cover page operations related to folders and buttons."""
 
     def __init__(self) -> None:
         self.content: 'CoverContent' | None = None

@@ -5,14 +5,13 @@ import sys
 from typing import List, Dict, Any, TYPE_CHECKING
 
 from WordBookButton import WordBookButton
-from UI.Folder_UI.api import update_all_folder_backgrounds
 
 if TYPE_CHECKING:
-    from UI.cover_content import CoverContent  # For type hinting
+    from UI.word_book_cover.cover_content import CoverContent  # For type hinting
 
 
 class FolderService:
-    """Business‑logic layer for the cover page operations related to folders and buttons."""
+    """Business‑logic layer for the word_book_cover page operations related to folders and buttons."""
 
     def __init__(self) -> None:
         self.content: 'CoverContent' | None = None

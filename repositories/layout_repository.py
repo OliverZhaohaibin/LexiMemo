@@ -32,4 +32,4 @@ class LayoutRepository:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump({"layout": layout_items}, f, ensure_ascii=False, indent=2)
         except Exception as exc:
-            raise RuntimeError(f"保存 cover 布局失败: {exc}") from exc
+            raise RuntimeError(f"保存 word_book_cover 布局失败: {exc}") from exc

@@ -44,7 +44,7 @@ class FolderHintMixin:
         )
         margin = 10
         # The reorder frame should span the width of the scroll content
-        # and cover the vertical extent of sub-buttons.
+        # and word_book_cover the vertical extent of sub-buttons.
         # Top starts from the top of the sub-button area.
         # If no sub_buttons, use parent_folder's bottom as reference.
         if parent_folder.sub_buttons:

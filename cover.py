@@ -1,7 +1,7 @@
-# cover.py – 程序入口
+# word_book_cover.py – 程序入口
 import sys
 from PySide6.QtWidgets import QApplication
-from UI.cover_view import CoverView
+from UI.word_book_cover.cover_view import CoverView
 from controllers.cover_controller import CoverController   # ← 路径未变
 
 def main() -> None:

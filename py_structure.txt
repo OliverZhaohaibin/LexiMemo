@@ -4,7 +4,6 @@
     db_memory.py
     font.py
     memory_curve.py
-    MultiSelectComboBox.py
     python collect_py_files.py.py
     styles.py
     utils.py
@@ -26,8 +25,7 @@
         wordbook_service.py
     UI/
         __init__.py
-        cover_content.py
-        cover_view.py
+        MultiSelectComboBox.py
         new_wordbook_dialog.py
         Folder_UI/
             _animations.py
@@ -39,6 +37,10 @@
             _utils.py
             api.py
             button.py
+        word_book_cover/
+            __init__.py
+            cover_content.py
+            cover_view.py
         word_book_inside/
             word_book_window.py
             word_detail_panel.py

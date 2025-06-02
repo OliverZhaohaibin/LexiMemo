@@ -6,7 +6,7 @@ from PySide6.QtCore import QObject, QEvent, Slot, Qt, QUrl, QTimer  # Added QTim
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
 
-from UI.cover_view import CoverView
+from UI.word_book_cover.cover_view import CoverView
 from services.folder_service import FolderService
 from services.cover_layout_service import CoverLayoutService
 from WordBookButton import WordBookButton

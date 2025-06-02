@@ -6,15 +6,14 @@ from typing import List, Tuple
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QGridLayout, QLineEdit, QTextEdit, QLabel, QPushButton, QHBoxLayout, QMessageBox
 )
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal
 
 from styles import (
     GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, LINE_EDIT_STYLE, TEXT_EDIT_STYLE,
-    PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE
+    SECONDARY_BUTTON_STYLE
 )
 from font import meaning_font, sentence_font, sentence_font_platte
-from MultiSelectComboBox import MultiSelectComboBox
-from utils import get_tags_path
+from UI.MultiSelectComboBox import MultiSelectComboBox
 
 
 class WordEditPanel(QWidget):

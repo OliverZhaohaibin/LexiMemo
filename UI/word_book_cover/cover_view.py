@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
     QPushButton, QLineEdit, QListWidget, QLabel
 )
-from UI.cover_content import CoverContent
+from UI.word_book_cover.cover_content import CoverContent
 from styles import SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE
 
 

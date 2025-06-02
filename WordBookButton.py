@@ -116,7 +116,7 @@ class WordBookButton(QPushButton):
         if os.path.exists(icon_path):
             return icon_path
 
-        base_image_path = os.path.join(base_dir, "icon", "cover.webp")
+        base_image_path = os.path.join(base_dir, "icon", "word_book_cover.webp")
         if not os.path.exists(base_image_path):
             pixmap = QPixmap(QSize(self.icon_size, self.icon_size))
             pixmap.fill(QColor(color))

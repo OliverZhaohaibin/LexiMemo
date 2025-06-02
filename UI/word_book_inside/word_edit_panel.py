@@ -13,7 +13,7 @@ from styles import (
     SECONDARY_BUTTON_STYLE
 )
 from font import meaning_font, sentence_font, sentence_font_platte
-from UI.MultiSelectComboBox import MultiSelectComboBox
+from UI.element.MultiSelectComboBox import MultiSelectComboBox
 
 
 class WordEditPanel(QWidget):

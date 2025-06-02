@@ -150,7 +150,7 @@ class CoverController(QObject):
             button_to_delete.deleteLater()
             parent.update_folder_icon()
 
-            from UI.Folder_UI._operations import _internal_check_and_remove_folder_if_needed
+            from UI.folder_ui._operations import _internal_check_and_remove_folder_if_needed
             _internal_check_and_remove_folder_if_needed(parent, content.buttons, content.scroll_content)
 
         else:  # Main button (folder or wordbook)

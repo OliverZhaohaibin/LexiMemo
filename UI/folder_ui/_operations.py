@@ -1,4 +1,4 @@
-# UI/Folder_UI/_operations.py开始
+# UI/folder_ui/_operations.py开始
 from __future__ import annotations
 import os
 import sys
@@ -6,7 +6,7 @@ import sys
 from WordBookButton import WordBookButton  # Assuming WordBookButton is in root
 
 
-# Helper functions for folder operations (adapted from original Folder_UI/folder_operations.py)
+# Helper functions for folder operations (adapted from original folder_ui/folder_operations.py)
 
 def _create_sub_button_instance(original_button: WordBookButton, parent_folder: WordBookButton, scroll_content,
                                 app_instance) -> WordBookButton:
@@ -217,4 +217,4 @@ class FolderOperationMixin:
 
 
 __all__ = ["FolderOperationMixin"]
-# UI/Folder_UI/_operations.py结束
+# UI/folder_ui/_operations.py结束

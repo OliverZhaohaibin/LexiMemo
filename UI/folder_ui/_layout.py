@@ -1,4 +1,4 @@
-# UI/Folder_UI/_layout.py开始
+# UI/folder_ui/_layout.py开始
 from PySide6.QtCore import QPoint, QRect, QParallelAnimationGroup  # Moved QParallelAnimationGroup here for broader use
 from typing import List, TYPE_CHECKING, Optional
 
@@ -422,4 +422,4 @@ __all__ = [
     "calculate_folder_area",
     "calculate_reorder_area",
 ]
-# UI/Folder_UI/_layout.py结束
+# UI/folder_ui/_layout.py结束

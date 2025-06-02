@@ -13,6 +13,17 @@
     WordBookButton.py
     controllers/
         cover_controller.py
+    Folder_UI/
+        animations.py
+        app.py
+        button.py
+        folder_background.py
+        folder_operations.py
+        frame.py
+        layout.py
+        utils.py
+        common/
+            folderUI_API.py
     repositories/
         __init__.py
         layout_repository.py
@@ -32,10 +43,10 @@
         cover_view.py
         new_wordbook_dialog.py
         Folder_UI/
-            __init__.py
             _animations.py
             _background.py
             _frame.py
+            _hints.py
             _layout.py
             _operations.py
             _utils.py

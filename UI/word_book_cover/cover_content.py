@@ -15,7 +15,12 @@ from UI.folder_ui.api import (
     ButtonFrame,
     calculate_button_distance
 )
-from WordBookButton import WordBookButton
+from UI.word_book_button import WordBookButton
+from UI.word_book_button import WordBookButtonView, WordBookButtonViewModel
+from controllers.wordbook_button_controller import WordBookButtonController
+from repositories.wordbook_repository import WordBook
+
+
 from UI.word_book_inside.word_book_window import WordBookWindow
 
 if TYPE_CHECKING:
@@ -59,8 +64,11 @@ class CoverContent(
         self.red_removal_frame = ButtonFrame(self, "border:2px dashed red; background:rgba(255,0,0,.1);")
         self.frame_visible: bool = False
 
-        self.new_book_button = WordBookButton("新建单词本", "#a3d2ca", parent=self, app=self)
+        self.new_book_button = WordBookButton("新建单词本", "#a3d2ca", parent=self)
+        self.new_book_button.app = self
         self.new_book_button.is_new_button = True
+        self.new_book_button.is_folder = False
+        self.new_book_button.is_sub_button = False
 
         self.scroll_area.viewport().installEventFilter(self)
         self._child_windows: list[WordBookWindow] = []
@@ -127,5 +135,3 @@ class CoverContent(
                 self.update_button_positions()
 
         return super().eventFilter(obj, ev)
-
-# UI/cover_content.py结束

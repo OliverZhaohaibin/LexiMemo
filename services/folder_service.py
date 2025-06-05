@@ -4,7 +4,7 @@ import os
 import sys
 from typing import List, Dict, Any, TYPE_CHECKING
 
-from WordBookButton import WordBookButton
+from UI.word_book_button import WordBookButton
 
 if TYPE_CHECKING:
     from UI.word_book_cover.cover_content import CoverContent  # For type hinting
@@ -17,54 +17,66 @@ class FolderService:
         self.content: 'CoverContent' | None = None
 
     def build_buttons(self, cover_content_instance: 'CoverContent') -> List[WordBookButton]:
-        """Scans 'books/' directory and creates WordBookButton instances.
-        The 'cover_content_instance' is UI.cover_content.CoverContent."""
+        """扫描 books/ 目录并以新 WordBookButton 创建按钮列表。"""
         self.content = cover_content_instance
 
         base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
         books_dir = os.path.join(base_dir, "books")
         os.makedirs(books_dir, exist_ok=True)
 
-        buttons: list[WordBookButton] = []
+        # -- 确保「总单词册」文件夹存在 ------------------------------------
+        main_name, main_color = "总单词册", "#FF0000"
+        main_folder = f"books_{main_name}_{main_color}"
+        main_path = os.path.join(books_dir, main_folder)
+        if not os.path.exists(main_path):
+            os.makedirs(main_path, exist_ok=True)
+            from db import init_db as _init_db
+            _init_db(os.path.join(main_path, "wordbook.db"))
 
-        total_word_book_name = "总单词册"
-        total_word_book_color = "#FF0000"
-        total_word_book_folder_name = f"books_{total_word_book_name}_{total_word_book_color}"
-        total_word_book_path_on_disk = os.path.join(books_dir, total_word_book_folder_name)
-        if not os.path.exists(total_word_book_path_on_disk):
-            os.makedirs(total_word_book_path_on_disk, exist_ok=True)
-            from db import init_db as db_init_db
-            db_init_db(os.path.join(total_word_book_path_on_disk, "wordbook.db"))
-
-        book_folders_data = []
-        for folder_on_disk in os.listdir(books_dir):
-            if not folder_on_disk.startswith("books_") or not os.path.isdir(os.path.join(books_dir, folder_on_disk)):
+        # -- 枚举磁盘目录，整理元数据 ------------------------------------
+        metas: list[Dict[str, str]] = []
+        for d in os.listdir(books_dir):
+            p = os.path.join(books_dir, d)
+            if not (d.startswith("books_") and os.path.isdir(p)):
                 continue
             try:
-                _, book_name, book_color = folder_on_disk.split("_", 2)
-                book_folders_data.append({'name': book_name, 'color': book_color, 'folder_name': folder_on_disk})
+                _, nm, cl = d.split("_", 2)
+                metas.append({"name": nm, "color": cl, "folder": d})
             except ValueError:
                 continue
 
-        sorted_book_folders = sorted(
-            book_folders_data,
-            key=lambda x: (x['name'] != total_word_book_name, x['name'])
-        )
+        metas.sort(key=lambda m: (m["name"] != main_name, m["name"]))
 
-        for book_data in sorted_book_folders:
-            path = os.path.join(books_dir, book_data['folder_name'])
-            btn = WordBookButton(book_data['name'], book_data['color'], parent=self.content, app=self.content)
+        buttons: list[WordBookButton] = []
+        for m in metas:
+            path = os.path.join(books_dir, m["folder"])
+
+            btn = WordBookButton(m["name"], m["color"], parent=self.content)  # ★ 不再传 app=
+            # —— 兼容旧逻辑：补挂属性 —— #
+            btn.app = self.content
             btn.path = path
+            btn.color = m["color"]
+            btn.is_folder = False
+            btn.is_sub_button = False
+            # Ensure button is visible and has a default size
+            btn.setFixedSize(self.content.button_width, self.content.button_height)  # Use CoverContent's dimensions
+            btn.show()  # Explicitly show the button to ensure visibility
 
-            if not btn.is_folder and hasattr(self.content, 'show_word_book'):
+            # 点击 → 打开单词本
+            if hasattr(self.content, "show_word_book"):
                 try:
                     btn.clicked.disconnect()
-                except RuntimeError:
+                except (RuntimeError, TypeError):
                     pass
-                btn.clicked.connect(lambda checked=False, p=btn.path: self.content.show_word_book(p))  # type: ignore
+                btn.clicked.connect(lambda _=False, p=btn.path: self.content.show_word_book(p))
+
             buttons.append(btn)
 
         self.content.buttons = buttons
+        # Trigger layout update to position buttons correctly
+        if hasattr(self.content, 'update_button_positions'):
+            self.content.update_button_positions()
+
         return buttons
 
     def set_edit_mode(self, entering: bool, buttons_on_content: list[WordBookButton]) -> None:
@@ -158,135 +170,90 @@ class FolderService:
             items.append(item_data)
         return items
 
-    def apply_layout(self, layout_items: List[Dict[str, Any]], current_buttons_from_scan: list[WordBookButton]) -> None:
-        """Reconstructs button order and folder hierarchy based on saved layout.
-        'current_buttons_from_scan' are WordBookButton instances from disk.
-        'self.content' is CoverContent.
-        """
-        if not self.content: return
+    def apply_layout(
+        self,
+        layout_items: List[Dict[str, Any]],
+        current_buttons_from_scan: list[WordBookButton],
+    ) -> None:
+        """根据保存的布局重建按钮顺序 / 文件夹结构。"""
+        if not self.content:
+            return
 
-        # Map scanned buttons by path for reliable lookup
-        path_to_scanned_btn: dict[str, WordBookButton] = {
-            btn.path: btn for btn in current_buttons_from_scan if btn.path
-        }
-        # Fallback map by name_color for items that might have lost path or are new folders
-        name_color_to_scanned_btn: dict[str, WordBookButton] = {
-            f"{btn.text()}_{btn.color}": btn for btn in current_buttons_from_scan
-        }
+        # ---------- 1. 统一补充缺失属性 ----------
+        for b in current_buttons_from_scan:
+            if not hasattr(b, "color"):
+                b.color = getattr(b, "_color", "#999999")   # 默认灰，基本不会用到
+            if not hasattr(b, "is_folder"):
+                b.is_folder = False
+            if not hasattr(b, "is_sub_button"):
+                b.is_sub_button = False
 
-        new_ordered_main_buttons: list[WordBookButton] = []
-        processed_paths: set[str] = set()  # Tracks paths of buttons already placed
+        # ---------- 2. 建立检索索引 ----------
+        path_to_scan = {b.path: b for b in current_buttons_from_scan if b.path}
+        name_color_to_scan = {f"{b.text()}_{b.color}": b for b in current_buttons_from_scan}
 
-        for item_spec in layout_items:
-            item_name = item_spec.get("name")
-            item_color = item_spec.get("color")
-            item_path = item_spec.get("path")  # Path from layout file
-            item_type = item_spec.get("type")
+        new_main_buttons: list[WordBookButton] = []
+        processed: set[str] = set()
 
-            current_btn_instance: WordBookButton | None = None
+        # ---------- 3. 按布局文件逐条构建 ----------
+        for spec in layout_items:
+            name, color = spec.get("name"), spec.get("color")
+            path, typ   = spec.get("path"), spec.get("type")
 
-            # Try to find existing button by path first, then by name_color
-            if item_path and item_path in path_to_scanned_btn:
-                current_btn_instance = path_to_scanned_btn[item_path]
-            elif item_name and item_color:
-                current_btn_instance = name_color_to_scanned_btn.get(f"{item_name}_{item_color}")
+            # 先在扫描结果里找现成的按钮
+            btn = None
+            if path and path in path_to_scan:
+                btn = path_to_scan[path]
+            elif name and color and f"{name}_{color}" in name_color_to_scan:
+                btn = name_color_to_scan[f"{name}_{color}"]
 
-            if item_type == "folder":
-                folder_btn: WordBookButton
-                if current_btn_instance and current_btn_instance.path and current_btn_instance.path not in processed_paths:
-                    # An existing scanned button is now marked as a folder
-                    folder_btn = current_btn_instance
-                    processed_paths.add(folder_btn.path)
-                elif current_btn_instance and not current_btn_instance.path and f"{item_name}_{item_color}" not in processed_paths:  # Check by name_color if path was missing
-                    folder_btn = current_btn_instance
-                    processed_paths.add(f"{item_name}_{item_color}")  # Use name_color as processed key
-                else:  # Create a new folder button if not found or already processed
-                    folder_btn = WordBookButton(item_name, item_color, parent=self.content, app=self.content)
+            # —— 文件夹 —— #
+            if typ == "folder":
+                folder_btn = btn or WordBookButton(name, color, parent=self.content)
+                folder_btn.color = color             # 确保属性存在
+                folder_btn.app   = self.content
+                folder_btn.is_folder   = True
+                folder_btn.is_expanded = spec.get("is_expanded", False)
+                folder_btn.sub_buttons = []
 
-                folder_btn.is_folder = True
-                folder_btn.is_expanded = item_spec.get("is_expanded", False)
-                folder_btn.sub_buttons = []  # Clear any previous sub_buttons if reusing an instance
+                # 处理子按钮
+                for sub in spec.get("sub_books", []):
+                    s_name, s_color, s_path = sub.get("name"), sub.get("color"), sub.get("path")
+                    sub_btn = None
+                    if s_path and s_path in path_to_scan:
+                        sub_btn = path_to_scan[s_path]
+                    elif s_name and s_color and f"{s_name}_{s_color}" in name_color_to_scan:
+                        sub_btn = name_color_to_scan[f"{s_name}_{s_color}"]
 
-                for sub_item_spec in item_spec.get("sub_books", []):
-                    sub_name = sub_item_spec.get("name")
-                    sub_color = sub_item_spec.get("color")
-                    sub_path = sub_item_spec.get("path")
+                    if sub_btn and (sub_btn.path or sub_btn.text()):
+                        sub_btn.color = getattr(sub_btn, "color", getattr(sub_btn, "_color", s_color))
+                        sub_btn.is_sub_button = True
+                        sub_btn.parent_folder = folder_btn
+                        folder_btn.sub_buttons.append(sub_btn)
+                        processed.add(sub_btn.path or f"{sub_btn.text()}_{sub_btn.color}")
 
-                    original_scanned_sub_btn: WordBookButton | None = None
-                    if sub_path and sub_path in path_to_scanned_btn:
-                        original_scanned_sub_btn = path_to_scanned_btn[sub_path]
-                    elif sub_name and sub_color:
-                        original_scanned_sub_btn = name_color_to_scanned_btn.get(f"{sub_name}_{sub_color}")
-
-                    if original_scanned_sub_btn and original_scanned_sub_btn.path and original_scanned_sub_btn.path not in processed_paths:
-                        # This sub-button is taken from the scanned list
-                        # We don't create a new instance, we *move* the scanned instance into the folder
-                        original_scanned_sub_btn.is_sub_button = True
-                        original_scanned_sub_btn.parent_folder = folder_btn
-                        original_scanned_sub_btn.hide()
-
-                        if hasattr(self.content, 'show_word_book'):
-                            try:
-                                original_scanned_sub_btn.clicked.disconnect()
-                            except RuntimeError:
-                                pass
-                            original_scanned_sub_btn.clicked.connect(
-                                lambda checked=False, p=original_scanned_sub_btn.path: self.content.show_word_book(p)
-                                # type: ignore
-                            )
-                        folder_btn.sub_buttons.append(original_scanned_sub_btn)
-                        processed_paths.add(original_scanned_sub_btn.path)
-                    elif not original_scanned_sub_btn:
-                        print(f"Warning: Sub-book '{sub_name}' (color: {sub_color}) from layout not found on disk.")
-
+                folder_btn.update_folder_icon = getattr(folder_btn, "update_folder_icon", lambda: None)
                 folder_btn.update_folder_icon()
-                new_ordered_main_buttons.append(folder_btn)
+                new_main_buttons.append(folder_btn)
+                processed.add(path or f"{name}_{color}")
 
-            elif item_type == "wordbook":
-                if current_btn_instance and current_btn_instance.path and current_btn_instance.path not in processed_paths:
-                    current_btn_instance.is_folder = False
-                    current_btn_instance.sub_buttons = []
-                    if hasattr(self.content, 'show_word_book') and current_btn_instance.path:
-                        try:
-                            current_btn_instance.clicked.disconnect()
-                        except RuntimeError:
-                            pass
-                        current_btn_instance.clicked.connect(
-                            lambda checked=False, p=current_btn_instance.path: self.content.show_word_book(p)
-                            # type: ignore
-                        )
-                    new_ordered_main_buttons.append(current_btn_instance)
-                    processed_paths.add(current_btn_instance.path)
-                elif not current_btn_instance and item_name and item_color:  # Only print warning if it was expected to be found
-                    print(f"Warning: Wordbook '{item_name}' (color: {item_color}) from layout not found on disk.")
+            # —— 普通单词本 —— #
+            elif typ == "wordbook":
+                word_btn = btn or WordBookButton(name, color, parent=self.content)
+                word_btn.color = color
+                word_btn.app   = self.content
+                word_btn.is_folder = False
+                new_main_buttons.append(word_btn)
+                processed.add(path or f"{name}_{color}")
 
-        # Add any scanned buttons that were not in the layout (e.g., newly created books)
-        for path, btn in path_to_scanned_btn.items():
-            if path not in processed_paths:
-                btn.is_folder = False
-                btn.sub_buttons = []
-                if hasattr(self.content, 'show_word_book') and btn.path:
-                    try:
-                        btn.clicked.disconnect()
-                    except RuntimeError:
-                        pass
-                    btn.clicked.connect(
-                        lambda checked=False, p=btn.path: self.content.show_word_book(p)  # type: ignore
-                    )
-                new_ordered_main_buttons.append(btn)
+        # ---------- 4. 把扫描到但布局缺失的按钮追加到末尾 ----------
+        for b in current_buttons_from_scan:
+            key = b.path or f"{b.text()}_{b.color}"
+            if key not in processed:
+                new_main_buttons.append(b)
 
-        # Cleanup: remove buttons from scanned list that were incorporated as sub_buttons
-        # and are thus no longer main buttons.
-        final_main_buttons = []
-        for btn in new_ordered_main_buttons:
-            if not btn.is_sub_button:
-                final_main_buttons.append(btn)
-            # Ensure correct parent for Qt display
-            if btn.parent() != self.content:
-                btn.setParent(self.content)
-            btn.show()
-
-        self.content.buttons = final_main_buttons
+        # ---------- 5. 写回 CoverContent ----------
+        self.content.buttons = new_main_buttons
         self.content.update_button_positions()
 
 # services/folder_service.py结束

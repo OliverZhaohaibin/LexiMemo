@@ -1,5 +1,89 @@
-UI/Folder_UI/_animations.py开始
-# UI/Folder_UI/_animations.py开始
+UI/__init__.py开始
+from UI.word_book_inside.word_book_window import WordBookWindow
+from UI.word_book_inside.word_detail_panel import WordDetailPanel
+from UI.word_book_inside.word_edit_panel import WordEditPanel
+from UI.word_book_inside.word_list_panel import WordListPanel
+
+__all__ = [
+    "WordBookWindow",
+    "WordListPanel",
+    "WordDetailPanel",
+    "WordEditPanel",
+]
+
+UI/__init__.py结束
+
+UI/element/MultiSelectComboBox.py开始
+# MultiSelectComboBox.py
+from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtWidgets import QComboBox
+from PySide6.QtCore import Qt
+from db import get_all_tags
+
+
+class MultiSelectComboBox(QComboBox):
+    def __init__(self, parent=None, book_name="总单词册", book_color="#FF0000"):
+        super(MultiSelectComboBox, self).__init__(parent)
+        self.book_name = book_name
+        self.book_color = book_color
+        self.setModel(QStandardItemModel(self))
+        self.add_all_tags_item()
+        self.all_tags_item_changed = False
+        self.model().itemChanged.connect(self.handle_item_changed)
+
+    def add_all_tags_item(self):
+        self.all_tags_item = QStandardItem("全部标签")
+        self.all_tags_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        self.all_tags_item.setData(Qt.Unchecked, Qt.CheckStateRole)
+        self.model().appendRow(self.all_tags_item)
+
+    def addItem(self, text, checked=False):
+        if text == "全部标签":
+            return
+        item = QStandardItem(text)
+        item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        item.setData(Qt.Checked if checked else Qt.Unchecked, Qt.CheckStateRole)
+        self.model().appendRow(item)
+
+    def selectedItems(self):
+        selected = []
+        for index in range(1, self.model().rowCount()):  # Skip "全部标签" at index 0
+            item = self.model().item(index)
+            if item.checkState() == Qt.Checked:
+                selected.append(item.text())
+        return selected
+
+    def clear(self):
+        self.model().clear()
+        self.add_all_tags_item()
+
+    def allItems(self):
+        return get_all_tags(self.book_name, self.book_color)
+
+    def handle_item_changed(self, item):
+        if self.all_tags_item_changed:
+            return
+        self.all_tags_item_changed = True
+        try:
+            if item == self.all_tags_item:
+                state = item.checkState()
+                for i in range(1, self.model().rowCount()):
+                    self.model().item(i).setCheckState(state)
+            elif item != self.all_tags_item:
+                if item.checkState() == Qt.Unchecked and self.all_tags_item.checkState() == Qt.Checked:
+                    self.all_tags_item.setCheckState(Qt.Unchecked)
+                elif all(self.model().item(i).checkState() == Qt.Checked for i in range(1, self.model().rowCount())):
+                    self.all_tags_item.setCheckState(Qt.Checked)
+        finally:
+            self.all_tags_item_changed = False
+UI/element/MultiSelectComboBox.py结束
+
+UI/element/__init__.py开始
+
+UI/element/__init__.py结束
+
+UI/folder_ui/_animations.py开始
+# UI/folder_ui/_animations.py开始
 from PySide6.QtCore import QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QPoint, QRect, QTimer
 from PySide6.QtWidgets import QGraphicsOpacityEffect
 from typing import Dict, List  # Import Dict and List
@@ -474,10 +558,10 @@ __all__ = [
     "create_folder_toggle_animation",
     "create_button_position_animation",
 ]
-# UI/Folder_UI/_animations.py结束
-UI/Folder_UI/_animations.py结束
+# UI/folder_ui/_animations.py结束
+UI/folder_ui/_animations.py结束
 
-UI/Folder_UI/_background.py开始
+UI/folder_ui/_background.py开始
 from PySide6.QtCore import QRect, QPropertyAnimation, QEasingCurve, QAbstractAnimation
 from PySide6.QtWidgets import QFrame, QGraphicsOpacityEffect
 
@@ -591,9 +675,9 @@ def update_all_folder_backgrounds(app, button_width, button_height):
     for btn in app.buttons:
         if btn.is_folder:
             update_folder_background(app, btn)
-UI/Folder_UI/_background.py结束
+UI/folder_ui/_background.py结束
 
-UI/Folder_UI/_frame.py开始
+UI/folder_ui/_frame.py开始
 from PySide6.QtWidgets import QFrame
 
 
@@ -607,10 +691,10 @@ class ButtonFrame(QFrame):
         self.setLineWidth(2)
         self.setStyleSheet(border_style)
         self.hide()
-UI/Folder_UI/_frame.py结束
+UI/folder_ui/_frame.py结束
 
-UI/Folder_UI/_hints.py开始
-# UI/Folder_UI/_hints.py开始
+UI/folder_ui/_hints.py开始
+# UI/folder_ui/_hints.py开始
 from PySide6.QtCore import QRect
 from ._layout import calculate_folder_area # Assumes calculate_folder_area is in _layout.py
 
@@ -705,16 +789,16 @@ class FolderHintMixin:
             self.red_removal_frame.hide()
 
 __all__ = ["FolderHintMixin"]
-# UI/Folder_UI/_hints.py结束
-UI/Folder_UI/_hints.py结束
+# UI/folder_ui/_hints.py结束
+UI/folder_ui/_hints.py结束
 
-UI/Folder_UI/_layout.py开始
-# UI/Folder_UI/_layout.py开始
+UI/folder_ui/_layout.py开始
+# UI/folder_ui/_layout.py开始
 from PySide6.QtCore import QPoint, QRect, QParallelAnimationGroup  # Moved QParallelAnimationGroup here for broader use
 from typing import List, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from WordBookButton import WordBookButton  # Or your specific button class
+    from UI.word_book_button import WordBookButton  # Or your specific button class
 
 
 def calculate_main_button_positions(
@@ -1133,41 +1217,50 @@ __all__ = [
     "calculate_folder_area",
     "calculate_reorder_area",
 ]
-# UI/Folder_UI/_layout.py结束
-UI/Folder_UI/_layout.py结束
+# UI/folder_ui/_layout.py结束
+UI/folder_ui/_layout.py结束
 
-UI/Folder_UI/_operations.py开始
-# UI/Folder_UI/_operations.py开始
+UI/folder_ui/_operations.py开始
+# UI/folder_ui/_operations.py开始
 from __future__ import annotations
 import os
 import sys
 
-from WordBookButton import WordBookButton  # Assuming WordBookButton is in root
+from UI.word_book_button import WordBookButton  # Assuming WordBookButton is in root
 
 
-# Helper functions for folder operations (adapted from original Folder_UI/folder_operations.py)
+# Helper functions for folder operations (adapted from original folder_ui/folder_operations.py)
 
-def _create_sub_button_instance(original_button: WordBookButton, parent_folder: WordBookButton, scroll_content,
-                                app_instance) -> WordBookButton:
-    """Creates a new WordBookButton instance to act as a sub-button."""
-    sub_btn = WordBookButton(original_button.text(), original_button.color, parent=scroll_content, app=app_instance)
+def _create_sub_button_instance(
+    original_button: WordBookButton,
+    parent_folder:  WordBookButton,
+    scroll_content,
+    app_instance,
+) -> WordBookButton:
+    """生成文件夹中的子按钮（兼容新版 WordBookButton）。"""
+    # ▶ 1) 构造——新版 ctor 仅 (title, color, parent)
+    sub_btn = WordBookButton(
+        original_button.text(),
+        original_button.color,
+        parent=scroll_content,
+    )
+    # ▶ 2) 恢复旧代码期望的附加属性
+    sub_btn.app           = app_instance          # 被多处回调使用
     sub_btn.is_sub_button = True
     sub_btn.parent_folder = parent_folder
-    sub_btn.path = original_button.path  # Critical: preserve the path for opening the book
+    sub_btn.path          = original_button.path  # 打开单词本所需
 
-    # Re-connect the clicked signal to the app_instance's (CoverContent) show_word_book method
-    # WordBookButton's default click is to call self.app.show_word_book(self.path)
-    # Ensure this is correctly handled or re-bound if necessary.
-    # If WordBookButton.clicked signal is already connected and path is set, it might just work.
-    # For clarity, we can ensure connection:
-    if hasattr(app_instance, 'show_word_book'):
+    # ▶ 3) 重新绑定点击 → CoverContent.show_word_book
+    if hasattr(app_instance, "show_word_book"):
         try:
-            sub_btn.clicked.disconnect()  # Disconnect any previous if WordBookButton constructor connects it
-        except:
+            sub_btn.clicked.disconnect()
+        except Exception:
             pass
-        sub_btn.clicked.connect(lambda checked=False, p=sub_btn.path: app_instance.show_word_book(p))
+        sub_btn.clicked.connect(
+            lambda _checked=False, p=sub_btn.path: app_instance.show_word_book(p)
+        )
 
-    sub_btn.hide()  # Initially hidden, will be shown by animation or layout update
+    sub_btn.hide()                                # 初始隐藏，动画/布局后再显示
     return sub_btn
 
 
@@ -1316,50 +1409,49 @@ class FolderOperationMixin:
         folder_btn.update_folder_icon()
 
     def _create_new_folder(self, btn1: WordBookButton, btn2: WordBookButton):
-        # `self` is CoverContent
+        """拖两个主按钮合并 → 新建文件夹。"""
         folder_name = f"Folder {len([b for b in self.buttons if b.is_folder]) + 1}"
-        # Use color of the button that was likely static (btn1 if btn2 was dragged, or vice-versa)
-        # For simplicity, using btn1's color.
         folder_color = btn1.color
 
-        folder_btn = WordBookButton(folder_name, folder_color, parent=self.scroll_content, app=self)
+        # ▶ 新版构造；随后补挂 app 属性
+        folder_btn = WordBookButton(folder_name, folder_color, parent=self.scroll_content)
+        folder_btn.app = self
         folder_btn.is_folder = True
-        folder_btn.is_expanded = False  # Start collapsed, toggle_folder will handle expansion
-        folder_btn.move(btn1.pos())  # Initial position
+        folder_btn.is_expanded = False
         folder_btn.sub_buttons = []
+        folder_btn.move(btn1.pos())  # 先放到原按钮位置
 
-        # Create sub_button instances for btn1 and btn2
+        # 子按钮实例化（复用上面新改的工具函数）
         sub1 = _create_sub_button_instance(btn1, folder_btn, self.scroll_content, self)
         sub2 = _create_sub_button_instance(btn2, folder_btn, self.scroll_content, self)
         folder_btn.sub_buttons.extend([sub1, sub2])
 
-        # Remove original btn1 and btn2 from main list and scene
-        if btn1 in self.buttons: self.buttons.remove(btn1)
-        btn1.hide();
-        btn1.deleteLater()
-        if btn2 in self.buttons: self.buttons.remove(btn2)
-        btn2.hide();
-        btn2.deleteLater()
+        # 移除原按钮
+        for old in (btn1, btn2):
+            if old in self.buttons:
+                self.buttons.remove(old)
+            old.hide();
+            old.deleteLater()
 
-        # Add new folder_btn to main list
+        # 挂到主列表并更新 UI
         self.buttons.append(folder_btn)
-        folder_btn.show()  # Make folder button visible
+        folder_btn.show()
         folder_btn.update_folder_icon()
 
         if self.edit_mode:
-            folder_btn.start_jitter()
-            sub1.start_jitter()  # New sub-buttons also jitter
+            folder_btn.start_jitter();
+            sub1.start_jitter();
             sub2.start_jitter()
-            self.toggle_folder(folder_btn)  # Expand new folder in edit mode
+            self.toggle_folder(folder_btn)  # 编辑模式下自动展开
         else:
-            self.toggle_folder(folder_btn)  # Expand new folder by default
+            self.toggle_folder(folder_btn)
 
 
 __all__ = ["FolderOperationMixin"]
-# UI/Folder_UI/_operations.py结束
-UI/Folder_UI/_operations.py结束
+# UI/folder_ui/_operations.py结束
+UI/folder_ui/_operations.py结束
 
-UI/Folder_UI/_utils.py开始
+UI/folder_ui/_utils.py开始
 import math
 from typing import Sequence, Tuple, Union
 from PySide6.QtCore import QPoint, QRect
@@ -1455,10 +1547,10 @@ def create_folder_icon(
     out_path = Path(out_path)
     canvas.save(out_path)
     return str(out_path)
-UI/Folder_UI/_utils.py结束
+UI/folder_ui/_utils.py结束
 
-UI/Folder_UI/api.py开始
-# UI/Folder_UI/api.py开始
+UI/folder_ui/api.py开始
+# UI/folder_ui/api.py开始
 """Public façade for the *Folder UI* subsystem.
 
 External modules – notably *CoverContent*, *WordBookButton*, or any editor
@@ -1468,7 +1560,7 @@ package, which may evolve over time.
 
 Example
 -------
-from UI.Folder_UI.api import FolderLayoutMixin, ButtonFrame # Corrected import example
+from UI.folder_ui.api import FolderLayoutMixin, ButtonFrame # Corrected import example
 
 All symbols listed in ``__all__`` below are guaranteed to remain stable across
 minor releases.
@@ -1517,10 +1609,10 @@ __all__: list[str] = [
     "calculate_button_distance",
     "is_button_in_frame",
 ]
-# UI/Folder_UI/api.py结束
-UI/Folder_UI/api.py结束
+# UI/folder_ui/api.py结束
+UI/folder_ui/api.py结束
 
-UI/Folder_UI/button.py开始
+UI/folder_ui/button.py开始
 import math
 from typing import Optional, Tuple
 
@@ -1847,87 +1939,7 @@ class DraggableButton(QPushButton):
             self._recenter_timer.deleteLater()
             self._recenter_timer = None
 
-UI/Folder_UI/button.py结束
-
-UI/MultiSelectComboBox.py开始
-# MultiSelectComboBox.py
-from PySide6.QtGui import QStandardItemModel, QStandardItem
-from PySide6.QtWidgets import QComboBox
-from PySide6.QtCore import Qt
-from db import get_all_tags
-
-
-class MultiSelectComboBox(QComboBox):
-    def __init__(self, parent=None, book_name="总单词册", book_color="#FF0000"):
-        super(MultiSelectComboBox, self).__init__(parent)
-        self.book_name = book_name
-        self.book_color = book_color
-        self.setModel(QStandardItemModel(self))
-        self.add_all_tags_item()
-        self.all_tags_item_changed = False
-        self.model().itemChanged.connect(self.handle_item_changed)
-
-    def add_all_tags_item(self):
-        self.all_tags_item = QStandardItem("全部标签")
-        self.all_tags_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        self.all_tags_item.setData(Qt.Unchecked, Qt.CheckStateRole)
-        self.model().appendRow(self.all_tags_item)
-
-    def addItem(self, text, checked=False):
-        if text == "全部标签":
-            return
-        item = QStandardItem(text)
-        item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        item.setData(Qt.Checked if checked else Qt.Unchecked, Qt.CheckStateRole)
-        self.model().appendRow(item)
-
-    def selectedItems(self):
-        selected = []
-        for index in range(1, self.model().rowCount()):  # Skip "全部标签" at index 0
-            item = self.model().item(index)
-            if item.checkState() == Qt.Checked:
-                selected.append(item.text())
-        return selected
-
-    def clear(self):
-        self.model().clear()
-        self.add_all_tags_item()
-
-    def allItems(self):
-        return get_all_tags(self.book_name, self.book_color)
-
-    def handle_item_changed(self, item):
-        if self.all_tags_item_changed:
-            return
-        self.all_tags_item_changed = True
-        try:
-            if item == self.all_tags_item:
-                state = item.checkState()
-                for i in range(1, self.model().rowCount()):
-                    self.model().item(i).setCheckState(state)
-            elif item != self.all_tags_item:
-                if item.checkState() == Qt.Unchecked and self.all_tags_item.checkState() == Qt.Checked:
-                    self.all_tags_item.setCheckState(Qt.Unchecked)
-                elif all(self.model().item(i).checkState() == Qt.Checked for i in range(1, self.model().rowCount())):
-                    self.all_tags_item.setCheckState(Qt.Checked)
-        finally:
-            self.all_tags_item_changed = False
-UI/MultiSelectComboBox.py结束
-
-UI/__init__.py开始
-from UI.word_book_inside.word_book_window import WordBookWindow
-from UI.word_book_inside.word_detail_panel import WordDetailPanel
-from UI.word_book_inside.word_edit_panel import WordEditPanel
-from UI.word_book_inside.word_list_panel import WordListPanel
-
-__all__ = [
-    "WordBookWindow",
-    "WordListPanel",
-    "WordDetailPanel",
-    "WordEditPanel",
-]
-
-UI/__init__.py结束
+UI/folder_ui/button.py结束
 
 UI/new_wordbook_dialog.py开始
 # UI/new_wordbook_dialog.py
@@ -1983,6 +1995,317 @@ class NewWordBookDialog(QDialog):
         self.accept()
 UI/new_wordbook_dialog.py结束
 
+UI/word_book_button/__init__.py开始
+"""
+Convenience re-exports so callers can simply:
+
+    from ui.wordbook_button import WordBookButton, WordBookButtonViewModel
+"""
+
+from .view import WordBookButtonView
+from .viewmodel import WordBookButtonViewModel
+
+# Alias for backward-compat: treat the *view* as “the button widget”.
+WordBookButton = WordBookButtonView
+
+__all__ = [
+    "WordBookButtonView",
+    "WordBookButtonViewModel",
+    "WordBookButton",
+]
+
+UI/word_book_button/__init__.py结束
+
+UI/word_book_button/view.py开始
+from __future__ import annotations
+import os, sys
+from pathlib import Path
+
+from PySide6.QtCore import (
+    Qt, QPoint, QSize, QTimer, Property, QPropertyAnimation, QEasingCurve, Signal
+)
+from PySide6.QtGui import (
+    QColor, QPainter, QPixmap, QAction, QCursor
+)
+from PySide6.QtWidgets import (
+    QPushButton, QMenu, QInputDialog
+)
+
+# -------- 常量 -------- #
+_ICON_DIR          = "icon"
+_BASE_ICON_NAME    = "word_book_cover.webp"   # 白底透明
+_DEFAULT_ICON_SIZE = 110                      # px
+
+# ============================================================
+class WordBookButtonView(QPushButton):
+    """保持旧视觉/交互（含点击暗化 + 抖动）的新按钮 View。"""
+
+    # ============ 向外暴露的信号（旧逻辑仍接收） ============ #
+    renameRequested = Signal(str)
+    deleteRequested = Signal()
+    openRequested   = Signal()
+
+    # ----------------- 构造 ----------------- #
+    def __init__(self, title: str, color: str, parent=None) -> None:
+        super().__init__(title, parent)
+
+        # —— 对外公开字段 —— #
+        self.color       = color
+        self.icon_size   = getattr(parent, "button_width", _DEFAULT_ICON_SIZE)
+        self.icon_path   = self._ensure_icon_file(color)
+        self.icon_pixmap = QPixmap(self.icon_path).scaled(
+            self.icon_size, self.icon_size,
+            Qt.KeepAspectRatio, Qt.SmoothTransformation
+        )
+
+        # —— 基本外观 —— #
+        self.setCursor(Qt.PointingHandCursor)
+        self.setCheckable(False)
+        self.setStyleSheet(
+            "QPushButton {background: transparent; border: none; color:#333; font-weight:bold;}"
+        )
+
+        # —— 点击暗化状态 —— #
+        self._dark_opacity = 0.0
+        self._fade_anim: QPropertyAnimation | None = None
+        self._long_press_timer = QTimer(self, singleShot=True, interval=110)
+        self._long_press_timer.timeout.connect(self._on_long_press)
+
+        # —— 抖动动画 —— #
+        self._jitter_anim: QPropertyAnimation | None = None
+        self._jitter_offset: float = 0.0  # -3 ~ 3 像素
+
+    # ===================== 抖动 ===================== #
+    def start_jitter(self) -> None:
+        if self._jitter_anim:
+            return
+        self._jitter_anim = QPropertyAnimation(self, b"jitterOffset")
+        self._jitter_anim.setStartValue(-3)
+        self._jitter_anim.setEndValue(3)
+        self._jitter_anim.setDuration(180)
+        self._jitter_anim.setEasingCurve(QEasingCurve.InOutSine)
+        self._jitter_anim.setLoopCount(-1)
+        self._jitter_anim.start()
+
+    def stop_jitter(self) -> None:
+        if self._jitter_anim:
+            self._jitter_anim.stop()
+            self._jitter_anim.deleteLater()
+            self._jitter_anim = None
+        self.jitterOffset = 0.0
+
+    # Property 供动画用
+    def _get_jitter(self) -> float:         return self._jitter_offset
+    def _set_jitter(self, v: float) -> None:
+        self._jitter_offset = v
+        self.update()
+    jitterOffset = Property(float, _get_jitter, _set_jitter)
+
+    # ===================== 鼠标交互 ===================== #
+    def mousePressEvent(self, ev):  # noqa: N802
+        if ev.button() == Qt.LeftButton:
+            self._set_dark(1.0)           # 立即暗化
+            self._long_press_timer.start()
+        super().mousePressEvent(ev)
+
+    def mouseReleaseEvent(self, ev):  # noqa: N802
+        if ev.button() == Qt.LeftButton:
+            self._long_press_timer.stop()
+            self._fade_dark()
+        super().mouseReleaseEvent(ev)
+
+    def mouseDoubleClickEvent(self, ev):  # noqa: N802
+        self.openRequested.emit()
+        super().mouseDoubleClickEvent(ev)
+
+    # 长按定时器回调
+    def _on_long_press(self):
+        if self.isDown():                 # 按住不放 → 开始淡出
+            self._fade_dark()
+
+    # ===================== 右键菜单 ===================== #
+    def contextMenuEvent(self, ev):  # noqa: N802
+        m = QMenu(self)
+        a1 = QAction("重命名", self)
+        a2 = QAction("删除", self)
+        a1.triggered.connect(self._prompt_rename)
+        a2.triggered.connect(self.deleteRequested)
+        m.addAction(a1); m.addAction(a2)
+        m.exec(ev.globalPos())
+
+    def _prompt_rename(self):
+        new_name, ok = QInputDialog.getText(self, "重命名单词本", "新名称：")
+        if ok and new_name.strip():
+            self.renameRequested.emit(new_name.strip())
+
+    # ===================== 暗化动画 ===================== #
+    def _set_dark(self, value: float):
+        self._dark_opacity = max(0.0, min(1.0, value))
+        self.update()
+
+    def _fade_dark(self):
+        if self._fade_anim and self._fade_anim.state() == QPropertyAnimation.Running:
+            self._fade_anim.stop()
+        self._fade_anim = QPropertyAnimation(self, b"darkOpacity", self)
+        self._fade_anim.setStartValue(self._dark_opacity)
+        self._fade_anim.setEndValue(0.0)
+        self._fade_anim.setDuration(150)
+        self._fade_anim.start()
+
+    def _get_dark(self) -> float:         return self._dark_opacity
+    def _set_dark_prop(self, v: float):   self._set_dark(v)
+    darkOpacity = Property(float, _get_dark, _set_dark_prop)
+
+    # ===================== 绘制 ===================== #
+    def paintEvent(self, _):  # noqa: N802
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # 1. 抖动平移
+        painter.translate(self._jitter_offset, 0)
+
+        # 2. 悬浮高亮 / 按下背景
+        if self.underMouse() or self.isDown():
+            bg = QColor(self.color).lighter(130 if self.isDown() else 180)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(bg)
+            painter.drawRoundedRect(self.rect(), 14, 14)
+
+        # 3. 图标
+        ix = (self.width() - self.icon_pixmap.width()) // 2
+        painter.drawPixmap(ix, 0, self.icon_pixmap)
+
+        # 4. 暗化遮罩
+        if self._dark_opacity > 0.01:
+            c = QColor(0, 0, 0, int(150 * self._dark_opacity))
+            painter.fillRect(self.rect(), c)
+
+        # 5. 文字
+        text_y = self.icon_size + 6
+        rect   = self.rect().adjusted(4, text_y, -4, -4)
+        painter.setPen(Qt.black)
+        fm = painter.fontMetrics()
+        txt = fm.elidedText(self.text(), Qt.ElideRight, rect.width())
+        painter.drawText(rect, Qt.AlignHCenter | Qt.AlignTop, txt)
+
+    # ===================== 图标生成 ===================== #
+    def _ensure_icon_file(self, color: str) -> str:
+        """若不存在已着色图标则生成并返回路径。"""
+        base = Path(os.path.abspath(sys.argv[0])).parent
+        icon_dir = base / _ICON_DIR
+        icon_dir.mkdir(exist_ok=True)
+
+        fn_color = color.lstrip("#")
+        out_path = icon_dir / f"colored_icon_{fn_color}.png"
+        if out_path.exists():
+            return str(out_path)
+
+        src = icon_dir / _BASE_ICON_NAME
+        if not src.exists():
+            pix = QPixmap(self.icon_size, self.icon_size); pix.fill(QColor(color))
+            pix.save(out_path)
+            return str(out_path)
+
+        try:
+            from PIL import Image
+            im = Image.open(src).convert("RGBA")
+            r, g, b = QColor(color).red(), QColor(color).green(), QColor(color).blue()
+            datas = [(r, g, b, a) if a > 0 else (255, 255, 255, 0) for (*_, a) in im.getdata()]
+            im.putdata(datas)
+            im.save(out_path)
+        except Exception:
+            pix = QPixmap(self.icon_size, self.icon_size); pix.fill(QColor(color))
+            pix.save(out_path)
+        return str(out_path)
+
+UI/word_book_button/view.py结束
+
+UI/word_book_button/viewmodel.py开始
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Optional
+
+from PySide6.QtCore import QObject, Signal
+
+from repositories.wordbook_repository import  WordBook
+from services.wordbook_service import WordBookService
+from UI.word_book_button.view import WordBookButtonView
+
+
+class WordBookButtonViewModel(QObject):
+    """
+    Glue between pure-view (Qt widget) and pure-business (Service).
+    Keeps lightweight state that the View *renders*.
+    """
+
+    # Re-expose intent signals upward (Controller may also subscribe)
+    rename_requested = Signal(str)
+    delete_requested = Signal()
+    open_requested = Signal()
+
+    def __init__(
+        self,
+        book: WordBook,
+        view: WordBookButtonView,
+        service: Optional[WordBookService] = None,
+        parent=None,
+    ) -> None:
+        super().__init__(parent)
+        self._book = book
+        self._view = view
+        self._svc = service or WordBookService.get_instance()
+
+        # 1) Forward View → VM public signals
+        view.renameRequested.connect(self.rename_requested)
+        view.deleteRequested.connect(self.delete_requested)
+        view.openRequested.connect(self.open_requested)
+
+        # 2) Handle View → business directly when Controller absent
+        view.renameRequested.connect(self._on_rename)
+        view.deleteRequested.connect(self._on_delete)
+        view.openRequested.connect(self._on_open)
+
+    # ------------------------------------------------------------------ #
+    # Public API (used by Controller or outer UI)
+    # ------------------------------------------------------------------ #
+    @property
+    def book(self) -> WordBook:
+        return self._book
+
+    def update_domain(self, book: WordBook) -> None:
+        """Replace the underlying domain obj & refresh view."""
+        self._book = book
+        self._view.setText(book.name)
+
+    def notify_deleted(self) -> None:
+        """Disable the button visually after deletion."""
+        self._view.setEnabled(False)
+
+    def open_in_editor(self) -> None:
+        """Default behaviour: open book path in OS explorer (overrideable)."""
+        from PySide6.QtGui import QDesktopServices, QGuiApplication
+        if self._book.path:
+            QDesktopServices.openUrl(Path(self._book.path).as_uri())
+        else:
+            QGuiApplication.beep()
+
+    # ------------------------------------------------------------------ #
+    # Internal slots (View ➜ direct business)
+    # ------------------------------------------------------------------ #
+    def _on_rename(self, new_name: str) -> None:
+        updated = self._svc.rename(self._book, new_name)
+        self.update_domain(updated)
+
+    def _on_delete(self) -> None:
+        self._svc.delete(self._book)
+        self.notify_deleted()
+
+    def _on_open(self) -> None:
+        self.open_in_editor()
+
+UI/word_book_button/viewmodel.py结束
+
 UI/word_book_cover/__init__.py开始
 
 UI/word_book_cover/__init__.py结束
@@ -1996,7 +2319,7 @@ from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import QWidget, QScrollArea, QMessageBox
 from PySide6.QtGui import QResizeEvent
 
-from UI.Folder_UI.api import (
+from UI.folder_ui.api import (
     FolderAnimationMixin,
     FolderLayoutMixin,
     FolderHintMixin,
@@ -2005,7 +2328,12 @@ from UI.Folder_UI.api import (
     ButtonFrame,
     calculate_button_distance
 )
-from WordBookButton import WordBookButton
+from UI.word_book_button import WordBookButton
+from UI.word_book_button import WordBookButtonView, WordBookButtonViewModel
+from controllers.wordbook_button_controller import WordBookButtonController
+from repositories.wordbook_repository import WordBook
+
+
 from UI.word_book_inside.word_book_window import WordBookWindow
 
 if TYPE_CHECKING:
@@ -2049,8 +2377,11 @@ class CoverContent(
         self.red_removal_frame = ButtonFrame(self, "border:2px dashed red; background:rgba(255,0,0,.1);")
         self.frame_visible: bool = False
 
-        self.new_book_button = WordBookButton("新建单词本", "#a3d2ca", parent=self, app=self)
+        self.new_book_button = WordBookButton("新建单词本", "#a3d2ca", parent=self)
+        self.new_book_button.app = self
         self.new_book_button.is_new_button = True
+        self.new_book_button.is_folder = False
+        self.new_book_button.is_sub_button = False
 
         self.scroll_area.viewport().installEventFilter(self)
         self._child_windows: list[WordBookWindow] = []
@@ -2544,7 +2875,7 @@ from styles import (
     SECONDARY_BUTTON_STYLE
 )
 from font import meaning_font, sentence_font, sentence_font_platte
-from UI.MultiSelectComboBox import MultiSelectComboBox
+from UI.element.MultiSelectComboBox import MultiSelectComboBox
 
 
 class WordEditPanel(QWidget):
@@ -2685,7 +3016,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt, QTimer
 
-from UI.MultiSelectComboBox import MultiSelectComboBox
+from UI.element.MultiSelectComboBox import MultiSelectComboBox
 from services.wordbook_service import WordBookService as WS
 from styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, LINE_EDIT_STYLE
 from font import list_word_font
@@ -2954,7 +3285,7 @@ class WordBookButton(QPushButton):
         return icon_path
 
     def update_folder_icon(self):
-        from UI.Folder_UI.api import create_folder_icon
+        from UI.folder_ui.api import create_folder_icon
 
         if not self.is_folder or not self.sub_buttons:
             if not self.is_folder and hasattr(self, 'color'):
@@ -3248,7 +3579,7 @@ class WordBookButton(QPushButton):
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        from UI.Folder_UI.api import calculate_folder_area, calculate_reorder_area
+        from UI.folder_ui.api import calculate_folder_area, calculate_reorder_area
         self._update_cursor(event.pos())
 
         if not (event.buttons() & Qt.LeftButton and self.app and self.app.edit_mode and \
@@ -3777,7 +4108,7 @@ from PySide6.QtGui import QDesktopServices
 from UI.word_book_cover.cover_view import CoverView
 from services.folder_service import FolderService
 from services.cover_layout_service import CoverLayoutService
-from WordBookButton import WordBookButton
+from UI.word_book_button import WordBookButton
 from UI.word_book_inside.word_book_window import WordBookWindow
 from db import delete_word as db_delete_word_directly, init_db as db_init_db
 import shutil
@@ -3802,55 +4133,55 @@ class CoverController(QObject):
         self._load_buttons_and_layout()
         self._build_word_index()
         v.scroll_area.viewport().installEventFilter(self)
+        view.destroyed.connect(lambda *_: view.scroll_area.viewport().removeEventFilter(self))
 
     def _get_content_buttons(self) -> list[WordBookButton]:
         """Helper to get the current list of main buttons from CoverContent."""
         return getattr(self.view.content, 'buttons', [])
 
+    from UI.word_book_button import WordBookButton
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtWidgets import QMenu
+
+    # ... 省略类头与其它方法 ...
+
     def _load_buttons_and_layout(self) -> None:
+        """刷新 Cover 页面按钮 + 布局。"""
         self.view.clear_wordbook_buttons()
 
-        # fs.build_buttons populates self.view.content.buttons
-        _ = self.fs.build_buttons(self.view.content)
+        # 1) 扫描磁盘生成按钮
+        scanned = self.fs.build_buttons(self.view.content)
 
-        if hasattr(self.view.content, 'new_book_button'):
-            try:
-                self.view.content.new_book_button.clicked.disconnect()
-            except RuntimeError:
-                pass
-            self.view.content.new_book_button.clicked.connect(self._create_wordbook)
-            self.view.content.new_book_button.setContextMenuPolicy(Qt.CustomContextMenu)
-            self.view.content.new_book_button.customContextMenuRequested.connect(
-                lambda pos, b=self.view.content.new_book_button: self._show_button_context_menu(pos, b)
-            )
+        # 2) “新建单词本”按钮
+        nb = self.view.content.new_book_button
+        try: nb.clicked.disconnect()
+        except (RuntimeError, TypeError): pass
+        nb.clicked.connect(self._create_wordbook)
+        self._wire_context_menu(nb)
+        self.view.add_wordbook_button(nb)           # 一定要 add！
 
-        for btn in self.view.content.buttons:  # Iterate over newly built buttons
-            if getattr(btn, "is_new_button", False):  # Should not happen if new_book_button is separate
-                continue
+        # 3) 把扫描到的按钮逐一塞进 CoverContent
+        for btn in scanned:
+            self._wire_context_menu(btn)
+            self.view.add_wordbook_button(btn)      # ★ 关键：真正 attach
 
-            try:
-                btn.clicked.disconnect()  # Clear any previous connections
-            except RuntimeError:
-                pass  # No connections to remove
-
-            if btn.is_folder:
-                # Connect to controller's method to decide if toggle should happen
-                btn.clicked.connect(lambda checked=False, b=btn: self._handle_folder_click(b))
-            elif hasattr(btn, 'path') and btn.path:
-                btn.clicked.connect(lambda checked=False, p=btn.path: self._open_wordbook(p))
-
-            btn.nameChangedNeedsLayoutSave.connect(self.save_current_layout)
-            btn.setContextMenuPolicy(Qt.CustomContextMenu)
-            btn.customContextMenuRequested.connect(lambda pos, b=btn: self._show_button_context_menu(pos, b))
-
-            self.view.add_wordbook_button(btn)  # Adds to CoverContent's visual hierarchy
-
-        layout_data = self.ls.load()
-        if layout_data:
-            # apply_layout reorders/reconstructs self.view.content.buttons
-            self.fs.apply_layout(layout_data, self.view.content.buttons)
+        # 4) 还原布局顺序
+        layout = self.ls.load()
+        if layout:
+            self.fs.apply_layout(layout, self.view.content.buttons)
 
         self.view.content.update_button_positions()
+
+        # ------------------- 工具：右键菜单挂接 ------------------- #
+    def _wire_context_menu(self, btn: WordBookButton) -> None:
+        try:
+            btn.customContextMenuRequested.disconnect()
+        except (RuntimeError, TypeError):
+            pass
+        btn.setContextMenuPolicy(Qt.CustomContextMenu)
+        btn.customContextMenuRequested.connect(
+            lambda pos, b=btn: self._show_button_context_menu(pos, b)
+        )
 
     def _handle_folder_click(self, button: WordBookButton):
         if not self.edit_mode and button.is_folder:
@@ -3918,7 +4249,7 @@ class CoverController(QObject):
             button_to_delete.deleteLater()
             parent.update_folder_icon()
 
-            from UI.Folder_UI._operations import _internal_check_and_remove_folder_if_needed
+            from UI.folder_ui._operations import _internal_check_and_remove_folder_if_needed
             _internal_check_and_remove_folder_if_needed(parent, content.buttons, content.scroll_content)
 
         else:  # Main button (folder or wordbook)
@@ -4101,6 +4432,56 @@ class CoverController(QObject):
 
 # controllers/cover_controller.py结束
 controllers/cover_controller.py结束
+
+controllers/wordbook_button_controller.py开始
+from __future__ import annotations
+
+
+from services.wordbook_service import WordBookService
+from UI.word_book_button import WordBookButtonViewModel
+
+
+class WordBookButtonController:
+    """
+    Orchestrates high-level use-cases for a WordBook button.
+    Receives ‘intent’ signals from the ViewModel and delegates to Service.
+    """
+
+    def __init__(
+        self,
+        vm: WordBookButtonViewModel,
+        service: WordBookService | None = None,
+    ) -> None:
+        self._vm = vm
+        self._service = service or WordBookService.get_instance()
+
+        # Wire VM-level signals ➜ local handlers
+        vm.rename_requested.connect(self._handle_rename)
+        vm.delete_requested.connect(self._handle_delete)
+        vm.open_requested.connect(self._handle_open)
+
+    # --------------------------------------------------------------------- #
+    # Signal handlers
+    # --------------------------------------------------------------------- #
+    def _handle_rename(self, new_name: str) -> None:
+        """Rename the underlying WordBook then tell VM to update its state."""
+        updated = self._service.rename(self._vm.book, new_name)
+        self._vm.update_domain(updated)
+
+    def _handle_delete(self) -> None:
+        """Delete the WordBook and tell VM/UI to reflect the removal."""
+        self._service.delete(self._vm.book)
+        self._vm.notify_deleted()
+
+    def _handle_open(self) -> None:
+        """Open the book in its dedicated editor/window."""
+        # 你可在 Service 层实现更复杂的逻辑；这里简单转给 VM。
+        self._vm.open_in_editor()
+
+
+__all__ = ["WordBookButtonController"]
+
+controllers/wordbook_button_controller.py结束
 
 cover.py开始
 # word_book_cover.py – 程序入口
@@ -5526,6 +5907,39 @@ class WordRepository:
 
 repositories/word_repository.py结束
 
+repositories/wordbook_repository.py开始
+# repositories/wordbook_repository.py
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import List, Optional
+
+
+# ---------- 纯数据：WordBook (原 domain.wordbook.WordBook) ----------
+@dataclass
+class WordBook:
+    name: str
+    color: str = "#ffffff"
+    path: Optional[Path] = None
+    is_folder: bool = False
+    sub_books: List["WordBook"] = field(default_factory=list)
+
+
+# ---------- 持久化层：示例 Repository ----------
+class WordBookRepository:
+    """负责磁盘 / SQLite 的增删改查，这里只给骨架示例。"""
+
+    def rename(self, book: WordBook, new_name: str) -> WordBook: ...
+    def delete(self, book: WordBook) -> None: ...
+    def save(self, book: WordBook) -> None: ...
+    def load_all(self) -> List[WordBook]: ...
+
+
+__all__ = ["WordBook", "WordBookRepository"]
+
+repositories/wordbook_repository.py结束
+
 services/__init__.py开始
 """Service package public interface.
 
@@ -5569,7 +5983,7 @@ import os
 import sys
 from typing import List, Dict, Any, TYPE_CHECKING
 
-from WordBookButton import WordBookButton
+from UI.word_book_button import WordBookButton
 
 if TYPE_CHECKING:
     from UI.word_book_cover.cover_content import CoverContent  # For type hinting
@@ -5582,51 +5996,56 @@ class FolderService:
         self.content: 'CoverContent' | None = None
 
     def build_buttons(self, cover_content_instance: 'CoverContent') -> List[WordBookButton]:
-        """Scans 'books/' directory and creates WordBookButton instances.
-        The 'cover_content_instance' is UI.cover_content.CoverContent."""
+        """扫描 books/ 目录并以新 WordBookButton 创建按钮列表。"""
         self.content = cover_content_instance
 
         base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
         books_dir = os.path.join(base_dir, "books")
         os.makedirs(books_dir, exist_ok=True)
 
-        buttons: list[WordBookButton] = []
+        # -- 确保「总单词册」文件夹存在 ------------------------------------
+        main_name, main_color = "总单词册", "#FF0000"
+        main_folder = f"books_{main_name}_{main_color}"
+        main_path = os.path.join(books_dir, main_folder)
+        if not os.path.exists(main_path):
+            os.makedirs(main_path, exist_ok=True)
+            from db import init_db as _init_db
+            _init_db(os.path.join(main_path, "wordbook.db"))
 
-        total_word_book_name = "总单词册"
-        total_word_book_color = "#FF0000"
-        total_word_book_folder_name = f"books_{total_word_book_name}_{total_word_book_color}"
-        total_word_book_path_on_disk = os.path.join(books_dir, total_word_book_folder_name)
-        if not os.path.exists(total_word_book_path_on_disk):
-            os.makedirs(total_word_book_path_on_disk, exist_ok=True)
-            from db import init_db as db_init_db
-            db_init_db(os.path.join(total_word_book_path_on_disk, "wordbook.db"))
-
-        book_folders_data = []
-        for folder_on_disk in os.listdir(books_dir):
-            if not folder_on_disk.startswith("books_") or not os.path.isdir(os.path.join(books_dir, folder_on_disk)):
+        # -- 枚举磁盘目录，整理元数据 ------------------------------------
+        metas: list[Dict[str, str]] = []
+        for d in os.listdir(books_dir):
+            p = os.path.join(books_dir, d)
+            if not (d.startswith("books_") and os.path.isdir(p)):
                 continue
             try:
-                _, book_name, book_color = folder_on_disk.split("_", 2)
-                book_folders_data.append({'name': book_name, 'color': book_color, 'folder_name': folder_on_disk})
+                _, nm, cl = d.split("_", 2)
+                metas.append({"name": nm, "color": cl, "folder": d})
             except ValueError:
                 continue
 
-        sorted_book_folders = sorted(
-            book_folders_data,
-            key=lambda x: (x['name'] != total_word_book_name, x['name'])
-        )
+        metas.sort(key=lambda m: (m["name"] != main_name, m["name"]))
 
-        for book_data in sorted_book_folders:
-            path = os.path.join(books_dir, book_data['folder_name'])
-            btn = WordBookButton(book_data['name'], book_data['color'], parent=self.content, app=self.content)
+        buttons: list[WordBookButton] = []
+        for m in metas:
+            path = os.path.join(books_dir, m["folder"])
+
+            btn = WordBookButton(m["name"], m["color"], parent=self.content)  # ★ 不再传 app=
+            # —— 兼容旧逻辑：补挂属性 —— #
+            btn.app = self.content
             btn.path = path
+            btn.color = m["color"]
+            btn.is_folder = False
+            btn.is_sub_button = False
 
-            if not btn.is_folder and hasattr(self.content, 'show_word_book'):
+            # 点击 → 打开单词本
+            if hasattr(self.content, "show_word_book"):
                 try:
                     btn.clicked.disconnect()
-                except RuntimeError:
+                except (RuntimeError, TypeError):
                     pass
-                btn.clicked.connect(lambda checked=False, p=btn.path: self.content.show_word_book(p))  # type: ignore
+                btn.clicked.connect(lambda _=False, p=btn.path: self.content.show_word_book(p))
+
             buttons.append(btn)
 
         self.content.buttons = buttons
@@ -5723,135 +6142,90 @@ class FolderService:
             items.append(item_data)
         return items
 
-    def apply_layout(self, layout_items: List[Dict[str, Any]], current_buttons_from_scan: list[WordBookButton]) -> None:
-        """Reconstructs button order and folder hierarchy based on saved layout.
-        'current_buttons_from_scan' are WordBookButton instances from disk.
-        'self.content' is CoverContent.
-        """
-        if not self.content: return
+    def apply_layout(
+        self,
+        layout_items: List[Dict[str, Any]],
+        current_buttons_from_scan: list[WordBookButton],
+    ) -> None:
+        """根据保存的布局重建按钮顺序 / 文件夹结构。"""
+        if not self.content:
+            return
 
-        # Map scanned buttons by path for reliable lookup
-        path_to_scanned_btn: dict[str, WordBookButton] = {
-            btn.path: btn for btn in current_buttons_from_scan if btn.path
-        }
-        # Fallback map by name_color for items that might have lost path or are new folders
-        name_color_to_scanned_btn: dict[str, WordBookButton] = {
-            f"{btn.text()}_{btn.color}": btn for btn in current_buttons_from_scan
-        }
+        # ---------- 1. 统一补充缺失属性 ----------
+        for b in current_buttons_from_scan:
+            if not hasattr(b, "color"):
+                b.color = getattr(b, "_color", "#999999")   # 默认灰，基本不会用到
+            if not hasattr(b, "is_folder"):
+                b.is_folder = False
+            if not hasattr(b, "is_sub_button"):
+                b.is_sub_button = False
 
-        new_ordered_main_buttons: list[WordBookButton] = []
-        processed_paths: set[str] = set()  # Tracks paths of buttons already placed
+        # ---------- 2. 建立检索索引 ----------
+        path_to_scan = {b.path: b for b in current_buttons_from_scan if b.path}
+        name_color_to_scan = {f"{b.text()}_{b.color}": b for b in current_buttons_from_scan}
 
-        for item_spec in layout_items:
-            item_name = item_spec.get("name")
-            item_color = item_spec.get("color")
-            item_path = item_spec.get("path")  # Path from layout file
-            item_type = item_spec.get("type")
+        new_main_buttons: list[WordBookButton] = []
+        processed: set[str] = set()
 
-            current_btn_instance: WordBookButton | None = None
+        # ---------- 3. 按布局文件逐条构建 ----------
+        for spec in layout_items:
+            name, color = spec.get("name"), spec.get("color")
+            path, typ   = spec.get("path"), spec.get("type")
 
-            # Try to find existing button by path first, then by name_color
-            if item_path and item_path in path_to_scanned_btn:
-                current_btn_instance = path_to_scanned_btn[item_path]
-            elif item_name and item_color:
-                current_btn_instance = name_color_to_scanned_btn.get(f"{item_name}_{item_color}")
+            # 先在扫描结果里找现成的按钮
+            btn = None
+            if path and path in path_to_scan:
+                btn = path_to_scan[path]
+            elif name and color and f"{name}_{color}" in name_color_to_scan:
+                btn = name_color_to_scan[f"{name}_{color}"]
 
-            if item_type == "folder":
-                folder_btn: WordBookButton
-                if current_btn_instance and current_btn_instance.path and current_btn_instance.path not in processed_paths:
-                    # An existing scanned button is now marked as a folder
-                    folder_btn = current_btn_instance
-                    processed_paths.add(folder_btn.path)
-                elif current_btn_instance and not current_btn_instance.path and f"{item_name}_{item_color}" not in processed_paths:  # Check by name_color if path was missing
-                    folder_btn = current_btn_instance
-                    processed_paths.add(f"{item_name}_{item_color}")  # Use name_color as processed key
-                else:  # Create a new folder button if not found or already processed
-                    folder_btn = WordBookButton(item_name, item_color, parent=self.content, app=self.content)
+            # —— 文件夹 —— #
+            if typ == "folder":
+                folder_btn = btn or WordBookButton(name, color, parent=self.content)
+                folder_btn.color = color             # 确保属性存在
+                folder_btn.app   = self.content
+                folder_btn.is_folder   = True
+                folder_btn.is_expanded = spec.get("is_expanded", False)
+                folder_btn.sub_buttons = []
 
-                folder_btn.is_folder = True
-                folder_btn.is_expanded = item_spec.get("is_expanded", False)
-                folder_btn.sub_buttons = []  # Clear any previous sub_buttons if reusing an instance
+                # 处理子按钮
+                for sub in spec.get("sub_books", []):
+                    s_name, s_color, s_path = sub.get("name"), sub.get("color"), sub.get("path")
+                    sub_btn = None
+                    if s_path and s_path in path_to_scan:
+                        sub_btn = path_to_scan[s_path]
+                    elif s_name and s_color and f"{s_name}_{s_color}" in name_color_to_scan:
+                        sub_btn = name_color_to_scan[f"{s_name}_{s_color}"]
 
-                for sub_item_spec in item_spec.get("sub_books", []):
-                    sub_name = sub_item_spec.get("name")
-                    sub_color = sub_item_spec.get("color")
-                    sub_path = sub_item_spec.get("path")
+                    if sub_btn and (sub_btn.path or sub_btn.text()):
+                        sub_btn.color = getattr(sub_btn, "color", getattr(sub_btn, "_color", s_color))
+                        sub_btn.is_sub_button = True
+                        sub_btn.parent_folder = folder_btn
+                        folder_btn.sub_buttons.append(sub_btn)
+                        processed.add(sub_btn.path or f"{sub_btn.text()}_{sub_btn.color}")
 
-                    original_scanned_sub_btn: WordBookButton | None = None
-                    if sub_path and sub_path in path_to_scanned_btn:
-                        original_scanned_sub_btn = path_to_scanned_btn[sub_path]
-                    elif sub_name and sub_color:
-                        original_scanned_sub_btn = name_color_to_scanned_btn.get(f"{sub_name}_{sub_color}")
-
-                    if original_scanned_sub_btn and original_scanned_sub_btn.path and original_scanned_sub_btn.path not in processed_paths:
-                        # This sub-button is taken from the scanned list
-                        # We don't create a new instance, we *move* the scanned instance into the folder
-                        original_scanned_sub_btn.is_sub_button = True
-                        original_scanned_sub_btn.parent_folder = folder_btn
-                        original_scanned_sub_btn.hide()
-
-                        if hasattr(self.content, 'show_word_book'):
-                            try:
-                                original_scanned_sub_btn.clicked.disconnect()
-                            except RuntimeError:
-                                pass
-                            original_scanned_sub_btn.clicked.connect(
-                                lambda checked=False, p=original_scanned_sub_btn.path: self.content.show_word_book(p)
-                                # type: ignore
-                            )
-                        folder_btn.sub_buttons.append(original_scanned_sub_btn)
-                        processed_paths.add(original_scanned_sub_btn.path)
-                    elif not original_scanned_sub_btn:
-                        print(f"Warning: Sub-book '{sub_name}' (color: {sub_color}) from layout not found on disk.")
-
+                folder_btn.update_folder_icon = getattr(folder_btn, "update_folder_icon", lambda: None)
                 folder_btn.update_folder_icon()
-                new_ordered_main_buttons.append(folder_btn)
+                new_main_buttons.append(folder_btn)
+                processed.add(path or f"{name}_{color}")
 
-            elif item_type == "wordbook":
-                if current_btn_instance and current_btn_instance.path and current_btn_instance.path not in processed_paths:
-                    current_btn_instance.is_folder = False
-                    current_btn_instance.sub_buttons = []
-                    if hasattr(self.content, 'show_word_book') and current_btn_instance.path:
-                        try:
-                            current_btn_instance.clicked.disconnect()
-                        except RuntimeError:
-                            pass
-                        current_btn_instance.clicked.connect(
-                            lambda checked=False, p=current_btn_instance.path: self.content.show_word_book(p)
-                            # type: ignore
-                        )
-                    new_ordered_main_buttons.append(current_btn_instance)
-                    processed_paths.add(current_btn_instance.path)
-                elif not current_btn_instance and item_name and item_color:  # Only print warning if it was expected to be found
-                    print(f"Warning: Wordbook '{item_name}' (color: {item_color}) from layout not found on disk.")
+            # —— 普通单词本 —— #
+            elif typ == "wordbook":
+                word_btn = btn or WordBookButton(name, color, parent=self.content)
+                word_btn.color = color
+                word_btn.app   = self.content
+                word_btn.is_folder = False
+                new_main_buttons.append(word_btn)
+                processed.add(path or f"{name}_{color}")
 
-        # Add any scanned buttons that were not in the layout (e.g., newly created books)
-        for path, btn in path_to_scanned_btn.items():
-            if path not in processed_paths:
-                btn.is_folder = False
-                btn.sub_buttons = []
-                if hasattr(self.content, 'show_word_book') and btn.path:
-                    try:
-                        btn.clicked.disconnect()
-                    except RuntimeError:
-                        pass
-                    btn.clicked.connect(
-                        lambda checked=False, p=btn.path: self.content.show_word_book(p)  # type: ignore
-                    )
-                new_ordered_main_buttons.append(btn)
+        # ---------- 4. 把扫描到但布局缺失的按钮追加到末尾 ----------
+        for b in current_buttons_from_scan:
+            key = b.path or f"{b.text()}_{b.color}"
+            if key not in processed:
+                new_main_buttons.append(b)
 
-        # Cleanup: remove buttons from scanned list that were incorporated as sub_buttons
-        # and are thus no longer main buttons.
-        final_main_buttons = []
-        for btn in new_ordered_main_buttons:
-            if not btn.is_sub_button:
-                final_main_buttons.append(btn)
-            # Ensure correct parent for Qt display
-            if btn.parent() != self.content:
-                btn.setParent(self.content)
-            btn.show()
-
-        self.content.buttons = final_main_buttons
+        # ---------- 5. 写回 CoverContent ----------
+        self.content.buttons = new_main_buttons
         self.content.update_button_positions()
 
 # services/folder_service.py结束

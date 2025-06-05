@@ -10,12 +10,14 @@
     WordBookButton.py
     controllers/
         cover_controller.py
+        wordbook_button_controller.py
     repositories/
         __init__.py
         layout_repository.py
         memory_repository.py
         tag_repository.py
         word_repository.py
+        wordbook_repository.py
     services/
         __init__.py
         cover_layout_service.py
@@ -25,9 +27,11 @@
         wordbook_service.py
     UI/
         __init__.py
-        MultiSelectComboBox.py
         new_wordbook_dialog.py
-        Folder_UI/
+        element/
+            __init__.py
+            MultiSelectComboBox.py
+        folder_ui/
             _animations.py
             _background.py
             _frame.py
@@ -37,6 +41,10 @@
             _utils.py
             api.py
             button.py
+        word_book_button/
+            __init__.py
+            view.py
+            viewmodel.py
         word_book_cover/
             __init__.py
             cover_content.py

@@ -3,32 +3,41 @@ from __future__ import annotations
 import os
 import sys
 
-from WordBookButton import WordBookButton  # Assuming WordBookButton is in root
+from UI.word_book_button import WordBookButton  # Assuming WordBookButton is in root
 
 
 # Helper functions for folder operations (adapted from original folder_ui/folder_operations.py)
 
-def _create_sub_button_instance(original_button: WordBookButton, parent_folder: WordBookButton, scroll_content,
-                                app_instance) -> WordBookButton:
-    """Creates a new WordBookButton instance to act as a sub-button."""
-    sub_btn = WordBookButton(original_button.text(), original_button.color, parent=scroll_content, app=app_instance)
+def _create_sub_button_instance(
+    original_button: WordBookButton,
+    parent_folder:  WordBookButton,
+    scroll_content,
+    app_instance,
+) -> WordBookButton:
+    """生成文件夹中的子按钮（兼容新版 WordBookButton）。"""
+    # ▶ 1) 构造——新版 ctor 仅 (title, color, parent)
+    sub_btn = WordBookButton(
+        original_button.text(),
+        original_button.color,
+        parent=scroll_content,
+    )
+    # ▶ 2) 恢复旧代码期望的附加属性
+    sub_btn.app           = app_instance          # 被多处回调使用
     sub_btn.is_sub_button = True
     sub_btn.parent_folder = parent_folder
-    sub_btn.path = original_button.path  # Critical: preserve the path for opening the book
+    sub_btn.path          = original_button.path  # 打开单词本所需
 
-    # Re-connect the clicked signal to the app_instance's (CoverContent) show_word_book method
-    # WordBookButton's default click is to call self.app.show_word_book(self.path)
-    # Ensure this is correctly handled or re-bound if necessary.
-    # If WordBookButton.clicked signal is already connected and path is set, it might just work.
-    # For clarity, we can ensure connection:
-    if hasattr(app_instance, 'show_word_book'):
+    # ▶ 3) 重新绑定点击 → CoverContent.show_word_book
+    if hasattr(app_instance, "show_word_book"):
         try:
-            sub_btn.clicked.disconnect()  # Disconnect any previous if WordBookButton constructor connects it
-        except:
+            sub_btn.clicked.disconnect()
+        except Exception:
             pass
-        sub_btn.clicked.connect(lambda checked=False, p=sub_btn.path: app_instance.show_word_book(p))
+        sub_btn.clicked.connect(
+            lambda _checked=False, p=sub_btn.path: app_instance.show_word_book(p)
+        )
 
-    sub_btn.hide()  # Initially hidden, will be shown by animation or layout update
+    sub_btn.hide()                                # 初始隐藏，动画/布局后再显示
     return sub_btn
 
 
@@ -177,43 +186,42 @@ class FolderOperationMixin:
         folder_btn.update_folder_icon()
 
     def _create_new_folder(self, btn1: WordBookButton, btn2: WordBookButton):
-        # `self` is CoverContent
+        """拖两个主按钮合并 → 新建文件夹。"""
         folder_name = f"Folder {len([b for b in self.buttons if b.is_folder]) + 1}"
-        # Use color of the button that was likely static (btn1 if btn2 was dragged, or vice-versa)
-        # For simplicity, using btn1's color.
         folder_color = btn1.color
 
-        folder_btn = WordBookButton(folder_name, folder_color, parent=self.scroll_content, app=self)
+        # ▶ 新版构造；随后补挂 app 属性
+        folder_btn = WordBookButton(folder_name, folder_color, parent=self.scroll_content)
+        folder_btn.app = self
         folder_btn.is_folder = True
-        folder_btn.is_expanded = False  # Start collapsed, toggle_folder will handle expansion
-        folder_btn.move(btn1.pos())  # Initial position
+        folder_btn.is_expanded = False
         folder_btn.sub_buttons = []
+        folder_btn.move(btn1.pos())  # 先放到原按钮位置
 
-        # Create sub_button instances for btn1 and btn2
+        # 子按钮实例化（复用上面新改的工具函数）
         sub1 = _create_sub_button_instance(btn1, folder_btn, self.scroll_content, self)
         sub2 = _create_sub_button_instance(btn2, folder_btn, self.scroll_content, self)
         folder_btn.sub_buttons.extend([sub1, sub2])
 
-        # Remove original btn1 and btn2 from main list and scene
-        if btn1 in self.buttons: self.buttons.remove(btn1)
-        btn1.hide();
-        btn1.deleteLater()
-        if btn2 in self.buttons: self.buttons.remove(btn2)
-        btn2.hide();
-        btn2.deleteLater()
+        # 移除原按钮
+        for old in (btn1, btn2):
+            if old in self.buttons:
+                self.buttons.remove(old)
+            old.hide();
+            old.deleteLater()
 
-        # Add new folder_btn to main list
+        # 挂到主列表并更新 UI
         self.buttons.append(folder_btn)
-        folder_btn.show()  # Make folder button visible
+        folder_btn.show()
         folder_btn.update_folder_icon()
 
         if self.edit_mode:
-            folder_btn.start_jitter()
-            sub1.start_jitter()  # New sub-buttons also jitter
+            folder_btn.start_jitter();
+            sub1.start_jitter();
             sub2.start_jitter()
-            self.toggle_folder(folder_btn)  # Expand new folder in edit mode
+            self.toggle_folder(folder_btn)  # 编辑模式下自动展开
         else:
-            self.toggle_folder(folder_btn)  # Expand new folder by default
+            self.toggle_folder(folder_btn)
 
 
 __all__ = ["FolderOperationMixin"]

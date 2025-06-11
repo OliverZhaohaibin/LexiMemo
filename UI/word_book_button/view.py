@@ -90,7 +90,7 @@ class WordBookButtonView(QPushButton):
         self.name_edit.returnPressed.connect(self._finish_name_edit)
         self.name_edit.editingFinished.connect(self._finish_name_edit)
 
-        self.delete_btn = QPushButton("✕", self)
+        self.delete_btn = QPushButton("X", self)
         self.delete_btn.setFixedSize(22, 22)
         self.delete_btn.setStyleSheet(RED_BUTTON_STYLE)
         self.delete_btn.hide()
@@ -172,7 +172,13 @@ class WordBookButtonView(QPushButton):
                     except Exception:
                         pass
             elif not self._edit_mode and self.rect().contains(ev.pos()):
-                self.openRequested.emit()
+                if self.is_folder and hasattr(self, "app") and self.app:
+                    try:
+                        self.app.toggle_folder(self)
+                    except Exception:
+                        pass
+                else:
+                    self.openRequested.emit()
         super().mouseReleaseEvent(ev)
 
     def mouseMoveEvent(self, ev):  # noqa: N802
@@ -212,7 +218,13 @@ class WordBookButtonView(QPushButton):
         if self._edit_mode:
             self.start_name_edit()
         else:
-            self.openRequested.emit()
+            if self.is_folder and hasattr(self, "app") and self.app:
+                try:
+                    self.app.toggle_folder(self)
+                except Exception:
+                    pass
+            else:
+                self.openRequested.emit()
         super().mouseDoubleClickEvent(ev)
 
     # 长按定时器回调

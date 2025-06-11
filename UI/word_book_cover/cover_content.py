@@ -6,7 +6,7 @@ from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import QWidget, QScrollArea, QMessageBox
 from PySide6.QtGui import QResizeEvent
 
-from UI.folder_ui.api import (
+from UI.Folder_UI.api import (
     FolderAnimationMixin,
     FolderLayoutMixin,
     FolderHintMixin,

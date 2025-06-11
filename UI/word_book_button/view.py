@@ -345,14 +345,43 @@ class WordBookButtonView(QPushButton):
 
         try:
             from PIL import Image
-            im = Image.open(src).convert("RGBA")
-            r, g, b = QColor(color).red(), QColor(color).green(), QColor(color).blue()
-            datas = [(r, g, b, a) if a > 0 else (255, 255, 255, 0) for (*_, a) in im.getdata()]
-            im.putdata(datas)
-            im.save(out_path)
         except Exception:
-            pix = QPixmap(self.icon_size, self.icon_size); pix.fill(QColor(color))
+            Image = None
+
+        if Image is not None:
+            try:
+                im = Image.open(src).convert("RGBA")
+                r, g, b = QColor(color).red(), QColor(color).green(), QColor(color).blue()
+                datas = [
+                    (r, g, b, a) if a > 0 else (255, 255, 255, 0)
+                    for (*_, a) in im.getdata()
+                ]
+                im.putdata(datas)
+                im.save(out_path)
+                return str(out_path)
+            except Exception:
+                pass
+
+        # ---- Qt fallback when Pillow is unavailable ----
+        base_pix = QPixmap(str(src)).scaled(
+            self.icon_size,
+            self.icon_size,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
+        )
+        if base_pix.isNull():
+            pix = QPixmap(self.icon_size, self.icon_size)
+            pix.fill(QColor(color))
             pix.save(out_path)
+            return str(out_path)
+
+        colored = QPixmap(base_pix.size())
+        colored.fill(QColor(color))
+        painter = QPainter(colored)
+        painter.setCompositionMode(QPainter.CompositionMode.DestinationIn)
+        painter.drawPixmap(0, 0, base_pix)
+        painter.end()
+        colored.save(out_path)
         return str(out_path)
 
     def update_folder_icon(self) -> None:

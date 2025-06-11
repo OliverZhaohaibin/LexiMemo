@@ -9,7 +9,7 @@ from PySide6.QtGui import (
     QColor, QPainter, QPixmap, QAction, QCursor, QFont
 )
 from PySide6.QtWidgets import (
-    QPushButton, QMenu, QInputDialog
+    QPushButton, QMenu, QInputDialog, QLineEdit
 )
 
 # -------- 常量 -------- #
@@ -65,51 +65,105 @@ class WordBookButtonView(QPushButton):
         self._long_press_timer = QTimer(self, singleShot=True, interval=110)
         self._long_press_timer.timeout.connect(self._on_long_press)
 
-        # —— 抖动动画 —— #
+        # —— 抖动 / 拖动状态 —— #
         self._jitter_anim: QPropertyAnimation | None = None
-        self._jitter_offset: float = 0.0  # -3 ~ 3 像素
+        self._rotation: float = 0.0
+        self._edit_mode = False
+        self._drag_offset: QPoint | None = None
+        self._dragging = False
+
+        # —— 内联重命名 & 删除按钮 —— #
+        self.name_edit = QLineEdit(self)
+        self.name_edit.hide()
+        self.name_edit.returnPressed.connect(self._finish_name_edit)
+        self.name_edit.editingFinished.connect(self._finish_name_edit)
+
+        self.delete_btn = QPushButton("✕", self)
+        self.delete_btn.setFixedSize(22, 22)
+        self.delete_btn.hide()
+        self.delete_btn.clicked.connect(self.deleteRequested)
+        self._update_delete_btn()
 
     # ===================== 抖动 ===================== #
     def start_jitter(self) -> None:
         if self._jitter_anim:
             return
-        self._jitter_anim = QPropertyAnimation(self, b"jitterOffset")
-        self._jitter_anim.setStartValue(-3)
-        self._jitter_anim.setEndValue(3)
-        self._jitter_anim.setDuration(180)
-        self._jitter_anim.setEasingCurve(QEasingCurve.InOutSine)
+        self._edit_mode = True
+        self._jitter_anim = QPropertyAnimation(self, b"rotation")
+        self._jitter_anim.setDuration(200)
         self._jitter_anim.setLoopCount(-1)
+        self._jitter_anim.setKeyValueAt(0, 0)
+        self._jitter_anim.setKeyValueAt(0.25, -2.0)
+        self._jitter_anim.setKeyValueAt(0.5, 0)
+        self._jitter_anim.setKeyValueAt(0.75, 2.0)
+        self._jitter_anim.setKeyValueAt(1, 0)
         self._jitter_anim.start()
+        self._update_delete_btn()
 
     def stop_jitter(self) -> None:
         if self._jitter_anim:
             self._jitter_anim.stop()
             self._jitter_anim.deleteLater()
             self._jitter_anim = None
-        self.jitterOffset = 0.0
+        self.rotation = 0.0
+        self._edit_mode = False
+        self._update_delete_btn()
 
     # Property 供动画用
-    def _get_jitter(self) -> float:         return self._jitter_offset
-    def _set_jitter(self, v: float) -> None:
-        self._jitter_offset = v
+    def _get_rotation(self) -> float:
+        return self._rotation
+
+    def _set_rotation(self, v: float) -> None:
+        self._rotation = v
         self.update()
-    jitterOffset = Property(float, _get_jitter, _set_jitter)
+
+    rotation = Property(float, _get_rotation, _set_rotation)
 
     # ===================== 鼠标交互 ===================== #
     def mousePressEvent(self, ev):  # noqa: N802
         if ev.button() == Qt.LeftButton:
             self._set_dark(1.0)           # 立即暗化
             self._long_press_timer.start()
+            if self._edit_mode:
+                self._drag_offset = ev.pos()
+                self._dragging = False
+                self.raise_()
         super().mousePressEvent(ev)
 
     def mouseReleaseEvent(self, ev):  # noqa: N802
         if ev.button() == Qt.LeftButton:
             self._long_press_timer.stop()
             self._fade_dark()
+            if self._edit_mode and self._dragging:
+                self._dragging = False
+                if hasattr(self.parent(), "update_button_positions"):
+                    try:
+                        self.parent().update_button_positions()
+                    except Exception:
+                        pass
+            elif not self._edit_mode and self.rect().contains(ev.pos()):
+                self.openRequested.emit()
         super().mouseReleaseEvent(ev)
 
+    def mouseMoveEvent(self, ev):  # noqa: N802
+        if self._edit_mode and ev.buttons() & Qt.LeftButton and self._drag_offset is not None:
+            if not self._dragging and (ev.pos() - self._drag_offset).manhattanLength() > 3:
+                self._dragging = True
+            if self._dragging:
+                new_pos = self.mapToParent(ev.pos() - self._drag_offset)
+                self.move(new_pos)
+                return
+        super().mouseMoveEvent(ev)
+
+    def resizeEvent(self, ev):  # noqa: N802
+        super().resizeEvent(ev)
+        self._update_delete_btn()
+
     def mouseDoubleClickEvent(self, ev):  # noqa: N802
-        self.openRequested.emit()
+        if self._edit_mode:
+            self.start_name_edit()
+        else:
+            self.openRequested.emit()
         super().mouseDoubleClickEvent(ev)
 
     # 长按定时器回调
@@ -131,6 +185,28 @@ class WordBookButtonView(QPushButton):
         new_name, ok = QInputDialog.getText(self, "重命名单词本", "新名称：")
         if ok and new_name.strip():
             self.renameRequested.emit(new_name.strip())
+
+    # ===================== 内联重命名 ===================== #
+    def start_name_edit(self) -> None:
+        if self.name_edit.isVisible():
+            return
+        self.name_edit.setText(self.text())
+        y = self.icon_size + 6
+        self.name_edit.setGeometry(0, y, self.width(), self.height() - y)
+        self.name_edit.show()
+        self.name_edit.setFocus()
+
+    def _finish_name_edit(self) -> None:
+        if not self.name_edit.isVisible():
+            return
+        new_name = self.name_edit.text().strip()
+        self.name_edit.hide()
+        if new_name and new_name != self.text():
+            self.renameRequested.emit(new_name)
+
+    def _update_delete_btn(self) -> None:
+        self.delete_btn.move(self.width() - self.delete_btn.width(), 0)
+        self.delete_btn.setVisible(self._edit_mode)
 
     # ===================== 暗化动画 ===================== #
     def _set_dark(self, value: float):
@@ -155,8 +231,11 @@ class WordBookButtonView(QPushButton):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # 1. 抖动平移
-        painter.translate(self._jitter_offset, 0)
+        painter.save()
+        if self._rotation:
+            painter.translate(self.width() / 2, self.height() / 2)
+            painter.rotate(self._rotation)
+            painter.translate(-self.width() / 2, -self.height() / 2)
 
         # 2. 悬浮高亮 / 按下背景
         if self.underMouse() or self.isDown():
@@ -181,6 +260,7 @@ class WordBookButtonView(QPushButton):
         fm = painter.fontMetrics()
         txt = fm.elidedText(self.text(), Qt.ElideRight, rect.width())
         painter.drawText(rect, Qt.AlignHCenter | Qt.AlignTop, txt)
+        painter.restore()
 
     # ===================== 图标生成 ===================== #
     def _ensure_icon_file(self, color: str) -> str:

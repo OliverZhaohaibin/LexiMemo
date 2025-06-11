@@ -12,6 +12,9 @@ from PySide6.QtWidgets import (
     QPushButton, QMenu, QInputDialog, QLineEdit
 )
 
+from styles import RED_BUTTON_STYLE
+from UI.folder_ui.api import calculate_reorder_area
+
 # -------- 常量 -------- #
 _ICON_DIR          = "UI/word_book_button/icon"
 _BASE_ICON_NAME    = "cover.webp"   # 白底透明
@@ -32,6 +35,14 @@ class WordBookButtonView(QPushButton):
 
         # —— 对外公开字段 —— #
         self.color       = color
+        self.color_str   = color  # Legacy alias used by controller
+        self.path: str | None = None
+        self.is_folder: bool = False
+        self.is_expanded: bool = False
+        self.is_sub_button: bool = False
+        self.parent_folder: 'WordBookButtonView | None' = None
+        self.sub_buttons: list['WordBookButtonView'] = []
+        self.drag_out_threshold_exceeded = False
 
         bw = getattr(parent, "button_width", 120)
         bh = getattr(parent, "button_height", 150)
@@ -71,6 +82,7 @@ class WordBookButtonView(QPushButton):
         self._edit_mode = False
         self._drag_offset: QPoint | None = None
         self._dragging = False
+        self.rename_source = "edit"
 
         # —— 内联重命名 & 删除按钮 —— #
         self.name_edit = QLineEdit(self)
@@ -80,6 +92,7 @@ class WordBookButtonView(QPushButton):
 
         self.delete_btn = QPushButton("✕", self)
         self.delete_btn.setFixedSize(22, 22)
+        self.delete_btn.setStyleSheet(RED_BUTTON_STYLE)
         self.delete_btn.hide()
         self.delete_btn.clicked.connect(self.deleteRequested)
         self._update_delete_btn()
@@ -136,6 +149,23 @@ class WordBookButtonView(QPushButton):
             self._fade_dark()
             if self._edit_mode and self._dragging:
                 self._dragging = False
+                if hasattr(self, "app") and self.app:
+                    if self.is_sub_button and self.parent_folder:
+                        if not self.drag_out_threshold_exceeded:
+                            self.app.update_sub_button_order(self.parent_folder, dragged_sub_button=self, realtime=False)
+                        else:
+                            self.app.remove_sub_button_from_folder(self)
+                        self.app.hide_blue_reorder_frame()
+                        self.app.hide_red_removal_frame()
+                    else:
+                        if self.app.frame_visible and self.app.is_button_in_frame(self):
+                            self.app.merge_folders()
+                        self.app.finalize_button_order()
+                        self.app.hide_frame()
+                        if not self.is_sub_button and hasattr(self.app, 'expand_all_folders'):
+                            self.app.expand_all_folders()
+                    if hasattr(self.app, 'controller') and hasattr(self.app.controller, 'save_current_layout'):
+                        self.app.controller.save_current_layout()
                 if hasattr(self.parent(), "update_button_positions"):
                     try:
                         self.parent().update_button_positions()
@@ -152,6 +182,25 @@ class WordBookButtonView(QPushButton):
             if self._dragging:
                 new_pos = self.mapToParent(ev.pos() - self._drag_offset)
                 self.move(new_pos)
+                if hasattr(self, "app") and self.app:
+                    if self.is_sub_button and self.parent_folder:
+                        reorder_rect = calculate_reorder_area(
+                            self.parent_folder, self.app.button_width, self.app.button_height,
+                            self.app.spacing, self.app.scroll_content.width(), getattr(self.app, 'folder_extra_width', 0)
+                        )
+                        center = self.mapTo(self.app, self.rect().center())
+                        if reorder_rect.contains(center):
+                            self.app.show_blue_reorder_frame(self.parent_folder)
+                            self.app.hide_red_removal_frame()
+                            self.drag_out_threshold_exceeded = False
+                            self.app.update_sub_button_order(self.parent_folder, dragged_sub_button=self, realtime=True)
+                        else:
+                            self.app.hide_blue_reorder_frame()
+                            self.app.show_red_removal_frame(self.parent_folder)
+                            self.drag_out_threshold_exceeded = True
+                    else:
+                        self.app.check_button_proximity(self)
+                        self.app.update_button_order(self)
                 return
         super().mouseMoveEvent(ev)
 
@@ -207,6 +256,8 @@ class WordBookButtonView(QPushButton):
     def _update_delete_btn(self) -> None:
         self.delete_btn.move(self.width() - self.delete_btn.width(), 0)
         self.delete_btn.setVisible(self._edit_mode)
+        if self._edit_mode:
+            self.delete_btn.raise_()
 
     # ===================== 暗化动画 ===================== #
     def _set_dark(self, value: float):
@@ -291,3 +342,52 @@ class WordBookButtonView(QPushButton):
             pix = QPixmap(self.icon_size, self.icon_size); pix.fill(QColor(color))
             pix.save(out_path)
         return str(out_path)
+
+    def update_folder_icon(self) -> None:
+        from UI.folder_ui.api import create_folder_icon
+        if not self.is_folder or not self.sub_buttons:
+            if not self.is_folder and hasattr(self, 'color'):
+                original_icon_path = self._ensure_icon_file(self.color)
+                self.icon_path = original_icon_path
+                self.icon_pixmap = QPixmap(self.icon_path).scaled(
+                    self.icon_size, self.icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                )
+            self.update()
+            return
+
+        sub_icon_paths = [s.icon_path for s in self.sub_buttons[:9] if getattr(s, 'icon_path', None)]
+        if not sub_icon_paths:
+            empty_icon = self._ensure_icon_file(self.color)
+            self.icon_path = empty_icon
+            self.icon_pixmap = QPixmap(self.icon_path).scaled(
+                self.icon_size, self.icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+            self.update()
+            return
+
+        icon_path = create_folder_icon(sub_icon_paths=sub_icon_paths, folder_name=self.text())
+        self.icon_path = icon_path
+        self.icon_pixmap = QPixmap(icon_path).scaled(
+            self.icon_size, self.icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation
+        )
+        self.update()
+
+    # ===================== Disk Ops ===================== #
+    def rename_wordbook_directory(self, old_name: str, new_name: str) -> str:
+        base_dir = Path(os.path.abspath(sys.argv[0])).parent
+        books_dir = base_dir / "books"
+        old_folder = f"books_{old_name}_{self.color}"
+        new_folder = f"books_{new_name}_{self.color}"
+        old_path = books_dir / old_folder
+        new_path = books_dir / new_folder
+        if old_path == new_path:
+            return str(new_path)
+        if new_path.exists():
+            raise FileExistsError(f"目标文件夹 '{new_folder}' 已存在。")
+        if not old_path.exists():
+            new_path.mkdir(parents=True, exist_ok=True)
+            from db import init_db as db_init_db
+            db_init_db(str(new_path / "wordbook.db"))
+            return str(new_path)
+        os.rename(old_path, new_path)
+        return str(new_path)

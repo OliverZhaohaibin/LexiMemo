@@ -26,6 +26,8 @@ def _create_sub_button_instance(
     sub_btn.is_sub_button = True
     sub_btn.parent_folder = parent_folder
     sub_btn.path          = original_button.path  # 打开单词本所需
+    if hasattr(app_instance, "button_width") and hasattr(app_instance, "button_height"):
+        sub_btn.setFixedSize(app_instance.button_width, app_instance.button_height)
 
     # ▶ 3) 重新绑定点击 → CoverContent.show_word_book
     if hasattr(app_instance, "show_word_book"):
@@ -196,6 +198,8 @@ class FolderOperationMixin:
         folder_btn.is_folder = True
         folder_btn.is_expanded = False
         folder_btn.sub_buttons = []
+        if hasattr(self, "button_width") and hasattr(self, "button_height"):
+            folder_btn.setFixedSize(self.button_width, self.button_height)
         folder_btn.move(btn1.pos())  # 先放到原按钮位置
 
         # 子按钮实例化（复用上面新改的工具函数）

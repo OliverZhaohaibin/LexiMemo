@@ -1,4 +1,4 @@
-# UI/folder_ui/_hints.py开始
+# ui/folder_ui/_hints.py开始
 from PySide6.QtCore import QRect
 from ._layout import calculate_folder_area # Assumes calculate_folder_area is in _layout.py
 
@@ -93,4 +93,4 @@ class FolderHintMixin:
             self.red_removal_frame.hide()
 
 __all__ = ["FolderHintMixin"]
-# UI/folder_ui/_hints.py结束
+# ui/folder_ui/_hints.py结束

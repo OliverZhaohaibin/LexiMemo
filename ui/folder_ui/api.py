@@ -1,14 +1,14 @@
-# UI/folder_ui/api.py开始
-"""Public façade for the *Folder UI* subsystem.
+# ui/folder_ui/api.py开始
+"""Public façade for the *Folder ui* subsystem.
 
 External modules – notably *CoverContent*, *WordBookButton*, or any editor
-plugins – should import all Folder‑related UI behaviour exclusively from this
+plugins – should import all Folder‑related ui behaviour exclusively from this
 module.  Doing so decouples them from the internal physical layout of the
 package, which may evolve over time.
 
 Example
 -------
-from UI.folder_ui.api import FolderLayoutMixin, ButtonFrame # Corrected import example
+from ui.folder_ui.api import FolderLayoutMixin, ButtonFrame # Corrected import example
 
 All symbols listed in ``__all__`` below are guaranteed to remain stable across
 minor releases.
@@ -57,4 +57,4 @@ __all__: list[str] = [
     "calculate_button_distance",
     "is_button_in_frame",
 ]
-# UI/folder_ui/api.py结束
+# ui/folder_ui/api.py结束

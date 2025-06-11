@@ -7,7 +7,7 @@ from PySide6.QtCore import QObject, Signal
 
 from repositories.wordbook_repository import  WordBook
 from services.wordbook_service import WordBookService
-from UI.word_book_button.view import WordBookButtonView
+from ui.word_book_button.view import WordBookButtonView
 
 
 class WordBookButtonViewModel(QObject):
@@ -44,7 +44,7 @@ class WordBookButtonViewModel(QObject):
         view.openRequested.connect(self._on_open)
 
     # ------------------------------------------------------------------ #
-    # Public API (used by Controller or outer UI)
+    # Public API (used by Controller or outer ui)
     # ------------------------------------------------------------------ #
     @property
     def book(self) -> WordBook:

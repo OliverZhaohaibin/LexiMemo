@@ -13,10 +13,10 @@ from PySide6.QtWidgets import (
 )
 
 from styles import RED_BUTTON_STYLE
-from UI.folder_ui.api import calculate_reorder_area
+from ui.folder_ui.api import calculate_reorder_area
 
 # -------- 常量 -------- #
-_ICON_DIR          = "UI/word_book_button/icon"
+_ICON_DIR          = "ui/word_book_button/icon"
 _BASE_ICON_NAME    = "cover.webp"   # 白底透明
 _DEFAULT_ICON_SIZE = 110                      # px
 
@@ -356,7 +356,7 @@ class WordBookButtonView(QPushButton):
         return str(out_path)
 
     def update_folder_icon(self) -> None:
-        from UI.folder_ui.api import create_folder_icon
+        from ui.folder_ui.api import create_folder_icon
         if not self.is_folder or not self.sub_buttons:
             if not self.is_folder and hasattr(self, 'color'):
                 original_icon_path = self._ensure_icon_file(self.color)

@@ -1,6 +1,6 @@
 # services/memory_service.py
 """
-背单词 / 记忆曲线业务层。供 memory_curve.py 及未来其它 UI 使用。
+背单词 / 记忆曲线业务层。供 memory_curve.py 及未来其它 ui 使用。
 """
 import pandas as pd
 from datetime import datetime, timedelta

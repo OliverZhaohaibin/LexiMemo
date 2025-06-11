@@ -1,9 +1,9 @@
-# UI/folder_ui/_layout.py开始
+# ui/folder_ui/_layout.py开始
 from PySide6.QtCore import QPoint, QRect, QParallelAnimationGroup  # Moved QParallelAnimationGroup here for broader use
 from typing import List, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from UI.word_book_button import WordBookButton  # Or your specific button class
+    from ui.word_book_button import WordBookButton  # Or your specific button class
 
 
 def calculate_main_button_positions(
@@ -144,7 +144,7 @@ class FolderLayoutMixin:
         ``new_book_button`` inside ``scroll_content``.
 
         · 如果 self.buttons 为空，也会为 new_book_button 计算位置，
-          使首次启动 / 全删光单词本时仍能看到 UI 元素。
+          使首次启动 / 全删光单词本时仍能看到 ui 元素。
         · 布局规则与旧版一致：从左上开始按行排，自动换行。
         """
         # ---------- 0) 基本健壮性检查 ----------
@@ -400,4 +400,4 @@ __all__ = [
     "calculate_folder_area",
     "calculate_reorder_area",
 ]
-# UI/folder_ui/_layout.py结束
+# ui/folder_ui/_layout.py结束

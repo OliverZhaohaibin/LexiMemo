@@ -6,11 +6,11 @@ from PySide6.QtCore import QObject, QEvent, Slot, Qt, QUrl, QTimer
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
 
-from UI.word_book_cover.cover_view import CoverView
+from ui.word_book_cover.cover_view import CoverView
 from services.folder_service import FolderService
 from services.cover_layout_service import CoverLayoutService
-from UI.word_book_button import WordBookButton  # This now points to the enhanced WordBookButtonView
-from UI.word_book_inside.word_book_window import WordBookWindow
+from ui.word_book_button import WordBookButton  # This now points to the enhanced WordBookButtonView
+from ui.word_book_inside.word_book_window import WordBookWindow
 from db import delete_word as db_delete_word_directly, init_db as db_init_db
 import shutil
 
@@ -157,7 +157,7 @@ class CoverController(QObject):
 
         except Exception as e:
             QMessageBox.warning(self.view, "重命名失败", f"重命名 '{old_name}' 失败: {e}")
-            # Revert UI changes if service call failed
+            # Revert ui changes if service call failed
             button_renamed.setText(old_name)
             if not button_renamed.is_folder:
                 button_renamed.path = old_path
@@ -247,7 +247,7 @@ class CoverController(QObject):
             button_to_delete.deleteLater()
             parent.update_folder_icon()
 
-            from UI.folder_ui._operations import _internal_check_and_remove_folder_if_needed
+            from ui.folder_ui._operations import _internal_check_and_remove_folder_if_needed
             _internal_check_and_remove_folder_if_needed(parent, content.buttons, content.scroll_content)
 
         else:  # Main button (folder or wordbook)

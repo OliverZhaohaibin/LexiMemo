@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 from services.wordbook_service import WordBookService
-from UI.word_book_button import WordBookButtonViewModel
+from ui.word_book_button import WordBookButtonViewModel
 
 
 class WordBookButtonController:
@@ -33,7 +33,7 @@ class WordBookButtonController:
         self._vm.update_domain(updated)
 
     def _handle_delete(self) -> None:
-        """Delete the WordBook and tell VM/UI to reflect the removal."""
+        """Delete the WordBook and tell VM/ui to reflect the removal."""
         self._service.delete(self._vm.book)
         self._vm.notify_deleted()
 

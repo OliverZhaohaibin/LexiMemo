@@ -1,9 +1,9 @@
-# UI/folder_ui/_operations.py开始
+# ui/folder_ui/_operations.py开始
 from __future__ import annotations
 import os
 import sys
 
-from UI.word_book_button import WordBookButton  # Assuming WordBookButton is in root
+from ui.word_book_button import WordBookButton  # Assuming WordBookButton is in root
 
 
 # Helper functions for folder operations (adapted from original folder_ui/folder_operations.py)
@@ -214,7 +214,7 @@ class FolderOperationMixin:
             old.hide();
             old.deleteLater()
 
-        # 挂到主列表并更新 UI
+        # 挂到主列表并更新 ui
         self.buttons.append(folder_btn)
         folder_btn.show()
         folder_btn.update_folder_icon()
@@ -229,4 +229,4 @@ class FolderOperationMixin:
 
 
 __all__ = ["FolderOperationMixin"]
-# UI/folder_ui/_operations.py结束
+# ui/folder_ui/_operations.py结束

@@ -1,4 +1,4 @@
-# UI/cover_content.py开始
+# ui/cover_content.py开始
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -6,7 +6,7 @@ from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import QWidget, QScrollArea, QMessageBox
 from PySide6.QtGui import QResizeEvent
 
-from UI.Folder_UI.api import (
+from ui.folder_ui.api import (
     FolderAnimationMixin,
     FolderLayoutMixin,
     FolderHintMixin,
@@ -15,13 +15,13 @@ from UI.Folder_UI.api import (
     ButtonFrame,
     calculate_button_distance
 )
-from UI.word_book_button import WordBookButton
-from UI.word_book_button import WordBookButtonView, WordBookButtonViewModel
+from ui.word_book_button import WordBookButton
+from ui.word_book_button import WordBookButtonView, WordBookButtonViewModel
 from controllers.wordbook_button_controller import WordBookButtonController
 from repositories.wordbook_repository import WordBook
 
 
-from UI.word_book_inside.word_book_window import WordBookWindow
+from ui.word_book_inside.word_book_window import WordBookWindow
 
 if TYPE_CHECKING:
     from controllers.cover_controller import CoverController
@@ -35,7 +35,7 @@ class CoverContent(
     FolderOperationMixin
 ):
     """Scroll‑area content that actually lays out the word‑book buttons and
-    handles drag‑and‑drop / folder UI interactions.  It fulfils all
+    handles drag‑and‑drop / folder ui interactions.  It fulfils all
     dependencies required by the 4 FolderUI mixins.
     """
 

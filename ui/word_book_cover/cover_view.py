@@ -7,13 +7,13 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
     QPushButton, QLineEdit, QListWidget, QLabel
 )
-from UI.word_book_cover.cover_content import CoverContent
+from ui.word_book_cover.cover_content import CoverContent
 from styles import SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE
 
 
 class CoverView(QWidget):
     """
-    纯 UI：标题栏 = 编辑按钮 + 全局搜索框
+    纯 ui：标题栏 = 编辑按钮 + 全局搜索框
     中部 = ScrollArea，内部由 Controller 绝对定位各 WordBookButton
     """
 
@@ -78,7 +78,7 @@ class CoverView(QWidget):
 
 
     # ------------------------------------------------------------
-    #               Controller 调用的 UI API
+    #               Controller 调用的 ui API
     # ------------------------------------------------------------
     def _toggle_edit(self) -> None:
         entering = self.edit_btn.text() == "编辑"

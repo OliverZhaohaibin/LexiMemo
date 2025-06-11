@@ -1,4 +1,4 @@
-# UI/new_wordbook_dialog.py
+# ui/new_wordbook_dialog.py
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QLineEdit, QPushButton, QDialogButtonBox,
     QColorDialog, QMessageBox

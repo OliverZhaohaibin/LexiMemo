@@ -1,4 +1,4 @@
-# UI/folder_ui/_animations.py开始
+# ui/folder_ui/_animations.py开始
 from PySide6.QtCore import QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QPoint, QRect, QTimer
 from PySide6.QtWidgets import QGraphicsOpacityEffect
 from typing import Dict, List  # Import Dict and List
@@ -473,4 +473,4 @@ __all__ = [
     "create_folder_toggle_animation",
     "create_button_position_animation",
 ]
-# UI/folder_ui/_animations.py结束
+# ui/folder_ui/_animations.py结束

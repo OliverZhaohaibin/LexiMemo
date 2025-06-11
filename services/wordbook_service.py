@@ -1,7 +1,7 @@
 """services/wordbook_service.py
 -------------------------------------------------
-High‑level business logic façade used by every UI layer.
-UI components must talk to this class instead of accessing repositories or
+High‑level business logic façade used by every ui layer.
+ui components must talk to this class instead of accessing repositories or
 `db.py` directly.  The service orchestrates repositories, applies validation
 or additional business rules (if any) and offers a *stable* API.
 """
@@ -23,9 +23,9 @@ class WordBookService:
         """Return all words from the specified book.
 
         Thin wrapper for :py:meth:`repositories.word_repository.WordRepository.list_words`.
-        UI should always call this instead of repositories directly so that
+        ui should always call this instead of repositories directly so that
         later we can introduce caching, filtering or async loading without
-        touching UI code.
+        touching ui code.
         """
         return WordRepository.list_words(book_name, book_color)
 

@@ -4,10 +4,10 @@ import os
 import sys
 from typing import List, Dict, Any, TYPE_CHECKING
 
-from UI.word_book_button import WordBookButton
+from ui.word_book_button import WordBookButton
 
 if TYPE_CHECKING:
-    from UI.word_book_cover.cover_content import CoverContent  # For type hinting
+    from ui.word_book_cover.cover_content import CoverContent  # For type hinting
 
 
 class FolderService:
@@ -133,7 +133,7 @@ class FolderService:
                 b.setStyleSheet(original_stylesheet)
 
     def show_new_wordbook_dialog(self) -> tuple[bool, str | None, str | None]:
-        from UI.new_wordbook_dialog import NewWordBookDialog
+        from ui.new_wordbook_dialog import NewWordBookDialog
         parent_window = self.content.window() if self.content else None
         dlg = NewWordBookDialog(parent_window)
         if dlg.exec():

@@ -1,6 +1,6 @@
 # services/tag_service.py
 """
-面向 UI 的标签业务层。
+面向 ui 的标签业务层。
 """
 from repositories.tag_repository import TagRepository
 

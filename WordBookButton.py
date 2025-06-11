@@ -139,7 +139,7 @@ class WordBookButton(QPushButton):
         return icon_path
 
     def update_folder_icon(self):
-        from UI.folder_ui.api import create_folder_icon
+        from ui.folder_ui.api import create_folder_icon
 
         if not self.is_folder or not self.sub_buttons:
             if not self.is_folder and hasattr(self, 'color'):
@@ -433,7 +433,7 @@ class WordBookButton(QPushButton):
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        from UI.folder_ui.api import calculate_folder_area, calculate_reorder_area
+        from ui.folder_ui.api import calculate_folder_area, calculate_reorder_area
         self._update_cursor(event.pos())
 
         if not (event.buttons() & Qt.LeftButton and self.app and self.app.edit_mode and \

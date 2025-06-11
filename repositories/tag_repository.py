@@ -6,7 +6,7 @@ from db import get_all_tags as _get_all_tags, save_tags as _save_tags
 
 
 class TagRepository:
-    """封装 db.py 里的标签 API，保证 UI/Service 不直接依赖 db.py"""
+    """封装 db.py 里的标签 API，保证 ui/Service 不直接依赖 db.py"""
 
     @staticmethod
     def list_tags(book_name: str, color: str) -> list[str]:

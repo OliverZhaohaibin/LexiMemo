@@ -6,7 +6,7 @@ from PySide6.QtCore import (
     Qt, QPoint, QSize, QTimer, Property, QPropertyAnimation, QEasingCurve, Signal
 )
 from PySide6.QtGui import (
-    QColor, QPainter, QPixmap, QAction, QCursor
+    QColor, QPainter, QPixmap, QAction, QCursor, QFont
 )
 from PySide6.QtWidgets import (
     QPushButton, QMenu, QInputDialog
@@ -32,12 +32,25 @@ class WordBookButtonView(QPushButton):
 
         # —— 对外公开字段 —— #
         self.color       = color
+
+        bw = getattr(parent, "button_width", 120)
+        bh = getattr(parent, "button_height", 150)
+        self.setFixedSize(bw, bh)
+
         self.icon_size   = getattr(parent, "button_width", _DEFAULT_ICON_SIZE)
         self.icon_path   = self._ensure_icon_file(color)
         self.icon_pixmap = QPixmap(self.icon_path).scaled(
             self.icon_size, self.icon_size,
             Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
+
+        try:
+            from font import normal_font
+            f = QFont(normal_font)
+            f.setBold(True)
+            self.setFont(f)
+        except Exception:
+            pass
 
         # —— 基本外观 —— #
         self.setCursor(Qt.PointingHandCursor)

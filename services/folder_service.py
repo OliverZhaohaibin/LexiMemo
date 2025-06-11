@@ -215,6 +215,7 @@ class FolderService:
                 folder_btn.is_folder   = True
                 folder_btn.is_expanded = spec.get("is_expanded", False)
                 folder_btn.sub_buttons = []
+                folder_btn.setFixedSize(self.content.button_width, self.content.button_height)
 
                 # 处理子按钮
                 for sub in spec.get("sub_books", []):
@@ -243,6 +244,7 @@ class FolderService:
                 word_btn.color = color
                 word_btn.app   = self.content
                 word_btn.is_folder = False
+                word_btn.setFixedSize(self.content.button_width, self.content.button_height)
                 new_main_buttons.append(word_btn)
                 processed.add(path or f"{name}_{color}")
 

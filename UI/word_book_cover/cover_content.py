@@ -69,6 +69,7 @@ class CoverContent(
         self.new_book_button.is_new_button = True
         self.new_book_button.is_folder = False
         self.new_book_button.is_sub_button = False
+        self.new_book_button.setFixedSize(self.button_width, self.button_height)
 
         self.scroll_area.viewport().installEventFilter(self)
         self._child_windows: list[WordBookWindow] = []

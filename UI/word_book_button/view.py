@@ -339,8 +339,9 @@ class WordBookButtonView(QPushButton):
 
         src = icon_dir / _BASE_ICON_NAME
         if not src.exists():
-            pix = QPixmap(self.icon_size, self.icon_size); pix.fill(QColor(color))
-            pix.save(out_path)
+            pix = QPixmap(self.icon_size, self.icon_size)
+            pix.fill(QColor(color))
+            pix.save(str(out_path))
             return str(out_path)
 
         try:
@@ -372,7 +373,7 @@ class WordBookButtonView(QPushButton):
         if base_pix.isNull():
             pix = QPixmap(self.icon_size, self.icon_size)
             pix.fill(QColor(color))
-            pix.save(out_path)
+            pix.save(str(out_path))
             return str(out_path)
 
         colored = QPixmap(base_pix.size())
@@ -381,7 +382,7 @@ class WordBookButtonView(QPushButton):
         painter.setCompositionMode(QPainter.CompositionMode.DestinationIn)
         painter.drawPixmap(0, 0, base_pix)
         painter.end()
-        colored.save(out_path)
+        colored.save(str(out_path))
         return str(out_path)
 
     def update_folder_icon(self) -> None:

@@ -62,13 +62,7 @@ class FolderService:
             btn.setFixedSize(self.content.button_width, self.content.button_height)  # Use CoverContent's dimensions
             btn.show()  # Explicitly show the button to ensure visibility
 
-            # 点击 → 打开单词本
-            if hasattr(self.content, "show_word_book"):
-                try:
-                    btn.clicked.disconnect()
-                except (RuntimeError, TypeError):
-                    pass
-                btn.clicked.connect(lambda _=False, p=btn.path: self.content.show_word_book(p))
+
 
             buttons.append(btn)
 

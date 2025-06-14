@@ -176,11 +176,14 @@ class FolderOperationMixin:
 
         if self.edit_mode:
             new_sub_btn.start_jitter()
-            # If folder was not expanded, expand it to show the new sub_button
             if not folder_btn.is_expanded:
                 self.toggle_folder(folder_btn)  # From AnimationMixin
-        elif folder_btn.is_expanded:  # If already expanded, just update positions
-            self.update_button_positions()  # This will show the new_sub_btn
+            else:
+                new_sub_btn.show()
+                self.update_button_positions()
+        elif folder_btn.is_expanded:
+            new_sub_btn.show()
+            self.update_button_positions()
 
         # If not in edit mode and folder is collapsed, sub_btn is added but stays hidden until folder expands
         # update_button_positions will handle overall layout.

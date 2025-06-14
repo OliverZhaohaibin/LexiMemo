@@ -374,11 +374,19 @@ class WordBookButtonView(QPushButton):
         if Image is not None and src.exists() and not base_pix.isNull():
             try:
                 im = Image.open(src).convert("RGBA")
-                r, g, b = QColor(color).red(), QColor(color).green(), QColor(color).blue()
-                datas = [
-                    (r, g, b, a) if a > 0 else (255, 255, 255, 0)
-                    for (*_, a) in im.getdata()
-                ]
+                target_r, target_g, target_b = (
+                    QColor(color).red(),
+                    QColor(color).green(),
+                    QColor(color).blue(),
+                )
+                datas = []
+                for r, g, b, a in im.getdata():
+                    if a == 0:
+                        datas.append((255, 255, 255, 0))
+                    elif r >= 235 and g >= 235 and b >= 235:
+                        datas.append((255, 255, 255, a))
+                    else:
+                        datas.append((target_r, target_g, target_b, a))
                 im.putdata(datas)
                 im.save(out_path)
                 return str(out_path)

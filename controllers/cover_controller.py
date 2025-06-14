@@ -59,10 +59,11 @@ class CoverController(QObject):
         nb = self.view.content.new_book_button
         # The 'clicked' signal for the main "new_book_button" is special and leads to _create_wordbook
         # Other buttons' 'openRequested' is for opening existing wordbooks.
-        try:
-            nb.clicked.disconnect()  # Standard QPushButton signal
-        except (RuntimeError, TypeError):
-            pass
+        if nb.receivers(nb.clicked) > 0:
+            try:
+                nb.clicked.disconnect()  # Standard QPushButton signal
+            except (RuntimeError, TypeError):
+                pass
         nb.clicked.connect(self._create_wordbook)
         self._wire_button_signals(nb)  # Wire other common signals
 
@@ -91,15 +92,16 @@ class CoverController(QObject):
 
         # ViewModel style connections for rename/delete actions
         if hasattr(btn, 'renameRequested'):
-            try:
-                btn.renameRequested.disconnect(self._handle_button_rename)
-            except (TypeError, RuntimeError):
-                pass
+            if btn.receivers(btn.renameRequested) > 0:
+                try:
+                    btn.renameRequested.disconnect(self._handle_button_rename)
+                except (TypeError, RuntimeError):
+                    pass
             btn.renameRequested.connect(self._handle_button_rename)
 
         if hasattr(btn, 'deleteRequested'):
             handler = getattr(btn, "_del_handler", None)
-            if handler:
+            if handler and btn.receivers(btn.deleteRequested) > 0:
                 try:
                     btn.deleteRequested.disconnect(handler)
                 except (TypeError, RuntimeError):
@@ -110,18 +112,20 @@ class CoverController(QObject):
 
         # For opening regular wordbooks (not folders, not the new_book_button)
         if hasattr(btn, 'openRequested') and not btn.is_folder and not getattr(btn, 'is_new_button', False):
-            try:
-                btn.openRequested.disconnect()
-            except (TypeError, RuntimeError):
-                pass
+            if btn.receivers(btn.openRequested) > 0:
+                try:
+                    btn.openRequested.disconnect()
+                except (TypeError, RuntimeError):
+                    pass
             btn.openRequested.connect(lambda p=btn.path: self._open_wordbook(p) if p else None)
 
         # For saving layout after name change via inline edit
         if hasattr(btn, 'nameChangedNeedsLayoutSave'):
-            try:
-                btn.nameChangedNeedsLayoutSave.disconnect(self.save_current_layout)
-            except (TypeError, RuntimeError):
-                pass
+            if btn.receivers(btn.nameChangedNeedsLayoutSave) > 0:
+                try:
+                    btn.nameChangedNeedsLayoutSave.disconnect(self.save_current_layout)
+                except (TypeError, RuntimeError):
+                    pass
             btn.nameChangedNeedsLayoutSave.connect(self.save_current_layout)
 
     def _handle_button_rename(self, new_name: str):
@@ -157,10 +161,11 @@ class CoverController(QObject):
             # Reconnect openRequested signal if path changed for a wordbook
             if not button_renamed.is_folder and not getattr(button_renamed, 'is_new_button', False) and hasattr(
                     self.view.content, "show_word_book") and button_renamed.path:
-                try:
-                    button_renamed.openRequested.disconnect()
-                except(RuntimeError, TypeError):
-                    pass
+                if button_renamed.receivers(button_renamed.openRequested) > 0:
+                    try:
+                        button_renamed.openRequested.disconnect()
+                    except(RuntimeError, TypeError):
+                        pass
                 button_renamed.openRequested.connect(
                     lambda p=button_renamed.path: self.view.content.show_word_book(p) if p else None)
 
@@ -178,10 +183,11 @@ class CoverController(QObject):
             return
 
     def _wire_context_menu(self, btn: WordBookButton) -> None:
-        try:
-            btn.customContextMenuRequested.disconnect()
-        except (RuntimeError, TypeError):
-            pass
+        if btn.receivers(btn.customContextMenuRequested) > 0:
+            try:
+                btn.customContextMenuRequested.disconnect()
+            except (RuntimeError, TypeError):
+                pass
         btn.setContextMenuPolicy(Qt.CustomContextMenu)
         btn.customContextMenuRequested.connect(
             lambda pos, b=btn: self._show_button_context_menu(pos, b)

@@ -107,7 +107,7 @@ class WordBookButton(QPushButton):
 
     def create_colored_icon(self, color: str) -> str:
         base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-        icon_dir = os.path.join(base_dir, "icon")
+        icon_dir = os.path.join(base_dir, "UI", "word_book_button", "icon")
         os.makedirs(icon_dir, exist_ok=True)
 
         color_filename_part = color.replace("#", "")
@@ -116,7 +116,7 @@ class WordBookButton(QPushButton):
         if os.path.exists(icon_path):
             return icon_path
 
-        base_image_path = os.path.join(base_dir, "icon", "word_book_cover.webp")
+        base_image_path = os.path.join(icon_dir, "cover.webp")
         if not os.path.exists(base_image_path):
             pixmap = QPixmap(QSize(self.icon_size, self.icon_size))
             pixmap.fill(QColor(color))

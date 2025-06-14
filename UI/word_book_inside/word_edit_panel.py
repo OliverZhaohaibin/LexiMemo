@@ -8,11 +8,11 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal
 
-from styles import (
+from UI.styles import (
     GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, LINE_EDIT_STYLE, TEXT_EDIT_STYLE,
     SECONDARY_BUTTON_STYLE
 )
-from font import meaning_font, sentence_font, sentence_font_platte
+from UI.font import meaning_font, sentence_font, sentence_font_platte
 from UI.element.MultiSelectComboBox import MultiSelectComboBox
 
 

@@ -8,14 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal, Qt
 
 from styles import PRIMARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE, TAG_LABEL_STYLE
-from font import (
-    meaning_font,
-    main_word_font,
-    sentence_font,
-    sentence_font_platte,
-    list_word_font,
-    normal_font,
-)
+from font import meaning_font, main_word_font, sentence_font, sentence_font_platte, list_word_font
 
 class WordDetailPanel(QWidget):
     """右侧只读详情视图。"""
@@ -100,19 +93,8 @@ class WordDetailPanel(QWidget):
     def _build_tag_tab(self, w: dict):
         wid = QWidget(); lay = QVBoxLayout(wid)
         tags = w.get("标签", [])
-        if tags:
-            row = QHBoxLayout()
-            lbl = QLabel("标签:")
-            lbl.setFont(normal_font)
-            row.addWidget(lbl)
-            for t in tags:
-                tag_lbl = QLabel(str(t))
-                tag_lbl.setStyleSheet(TAG_LABEL_STYLE)
-                row.addWidget(tag_lbl)
-            row.addStretch(1)
-            lay.addLayout(row)
-        else:
-            self._add_row(lay, "标签:", "无标签")
+        txt = ", ".join(tags) if tags else "无标签"
+        self._add_row(lay, "标签:", txt)
         self.tab.addTab(wid, "标签")
 
     def _build_related_tab(self, w: dict):
@@ -125,7 +107,8 @@ class WordDetailPanel(QWidget):
     # ------------------------------------------------------------------
     def _add_row(self, layout: QVBoxLayout, label_text: str, content: str, *, multiline=False, bold=False):
         lbl = QLabel(label_text)
-        lbl.setFont(meaning_font if bold else normal_font)
+        if bold:
+            lbl.setFont(meaning_font)
         layout.addWidget(lbl)
         if multiline:
             te = QTextEdit()
@@ -136,5 +119,4 @@ class WordDetailPanel(QWidget):
             layout.addWidget(te)
         else:
             val = QLabel(str(content))
-            val.setFont(normal_font)
             layout.addWidget(val)

@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QListWidget, QLabel
 )
 from UI.word_book_cover.cover_content import CoverContent
-from styles import SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE
+from UI.styles import SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE
 
 
 class CoverView(QWidget):

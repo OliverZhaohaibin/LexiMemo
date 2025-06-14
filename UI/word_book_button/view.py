@@ -3,16 +3,16 @@ import os, sys
 from pathlib import Path
 
 from PySide6.QtCore import (
-    Qt, QPoint, QSize, QTimer, Property, QPropertyAnimation, QEasingCurve, Signal
+    Qt, QPoint, QTimer, Property, QPropertyAnimation, Signal
 )
 from PySide6.QtGui import (
-    QColor, QPainter, QPixmap, QAction, QCursor, QFont
+    QColor, QPainter, QPixmap, QAction, QFont
 )
 from PySide6.QtWidgets import (
     QPushButton, QMenu, QInputDialog, QLineEdit
 )
 
-from styles import RED_BUTTON_STYLE
+from UI.styles import RED_BUTTON_STYLE
 from UI.folder_ui.api import calculate_reorder_area
 
 # -------- 常量 -------- #
@@ -56,7 +56,7 @@ class WordBookButtonView(QPushButton):
         )
 
         try:
-            from font import normal_font
+            from UI.font import normal_font
             f = QFont(normal_font)
             f.setBold(True)
             self.setFont(f)

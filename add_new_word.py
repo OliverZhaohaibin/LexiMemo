@@ -9,10 +9,10 @@ from PySide6.QtCore import Signal
 
 from datetime import datetime
 
-from font import meaning_font, word_font
+from UI.font import meaning_font, word_font
 from utils import get_tags_path, get_total_tags_path
 from services.wordbook_service import WordBookService as WS
-from styles import GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, GRAY_INPUT_STYLE, GRAY_TEXT_EDIT_STYLE, PRIMARY_BUTTON_STYLE, \
+from UI.styles import GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, GRAY_INPUT_STYLE, GRAY_TEXT_EDIT_STYLE, PRIMARY_BUTTON_STYLE, \
     SECONDARY_BUTTON_STYLE
 
 

@@ -1,13 +1,13 @@
 # WordBookButton.py开始
-from PySide6.QtWidgets import QPushButton, QLineEdit, QMessageBox, QMenu
-from PySide6.QtGui import QColor, QPainter, QPixmap, QFont, QCursor
+from PySide6.QtWidgets import QPushButton, QLineEdit, QMessageBox
+from PySide6.QtGui import QColor, QPainter, QPixmap, QFont
 from PySide6.QtCore import Qt, QRect, QPoint, QPropertyAnimation, QTimer, QEasingCurve, Property, Signal, QSize
 from PySide6.QtGui import QColorConstants
 
 from PIL import Image
 import os
 import sys
-from font import normal_font
+from UI.font import normal_font
 from PySide6.QtGui import QCursor  # Ensure QCursor is imported
 
 
@@ -434,7 +434,7 @@ class WordBookButton(QPushButton):
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        from UI.folder_ui.api import calculate_folder_area, calculate_reorder_area
+        from UI.folder_ui.api import calculate_reorder_area
         self._update_cursor(event.pos())
 
         if not (event.buttons() & Qt.LeftButton and self.app and self.app.edit_mode and \

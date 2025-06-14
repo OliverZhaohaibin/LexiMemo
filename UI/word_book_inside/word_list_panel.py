@@ -8,8 +8,8 @@ from PySide6.QtCore import Signal, Qt, QTimer
 
 from UI.element.MultiSelectComboBox import MultiSelectComboBox
 from services.wordbook_service import WordBookService as WS
-from styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, LINE_EDIT_STYLE
-from font import list_word_font
+from UI.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, LINE_EDIT_STYLE
+from UI.font import list_word_font
 from utils import get_tags_path
 
 

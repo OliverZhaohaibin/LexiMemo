@@ -4,13 +4,13 @@ import sys
 import pandas as pd
 import random
 from datetime import datetime, timedelta
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QLineEdit, QMessageBox, QFrame, QTextEdit
 )
-from font import meaning_font, main_word_font, list_word_font, sentence_font
-from styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE
+from UI.font import meaning_font, main_word_font, list_word_font, sentence_font
+from UI.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE
 from db_memory import load_memory_data, save_memory_data, get_review_words, update_word_memory_status
 
 # 艾宾浩斯遗忘曲线复习间隔（单位：天）

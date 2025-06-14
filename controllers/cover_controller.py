@@ -10,6 +10,9 @@ from UI.word_book_cover.cover_view import CoverView
 from services.folder_service import FolderService
 from services.cover_layout_service import CoverLayoutService
 from UI.word_book_button import WordBookButton  # This now points to the enhanced WordBookButtonView
+from services.wordbook_service import WordBookService
+from repositories.wordbook_repository import WordBook
+from pathlib import Path
 from UI.word_book_inside.word_book_window import WordBookWindow
 from db import delete_word as db_delete_word_directly, init_db as db_init_db
 import shutil
@@ -21,6 +24,7 @@ class CoverController(QObject):
         self.view: CoverView = view
         self.fs: FolderService = FolderService()
         self.ls: CoverLayoutService = CoverLayoutService()
+        self.wb_service: WordBookService = WordBookService.get_instance()
         self.edit_mode: bool = False
         self._child_windows: list[WordBookWindow] = []
 
@@ -139,11 +143,15 @@ class CoverController(QObject):
 
         try:
             if not button_renamed.is_folder:
-                # For wordbooks, the button's internal rename_wordbook_directory handles filesystem
-                # This is a bit of a violation of single responsibility, ideally service layer handles fs.
-                # For now, let's assume button's internal logic is called by it,
-                # or we call a service method here.
-                # If the button itself calls rename_wordbook_directory upon successful name change by user:
+                book = WordBook(
+                    name=old_name,
+                    color=getattr(button_renamed, "color", "#ffffff"),
+                    path=Path(button_renamed.path) if button_renamed.path else None,
+                )
+                updated = self.wb_service.rename(book, new_name)
+                button_renamed.path = str(updated.path) if updated.path else None
+            else:
+                # Folders currently rely on view's helper for disk rename
                 new_path = button_renamed.rename_wordbook_directory(old_name, new_name)
                 button_renamed.path = new_path
 

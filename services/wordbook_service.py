@@ -10,10 +10,22 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from repositories.word_repository import WordRepository
+from repositories.wordbook_repository import WordBook, WordBookRepository
 
 
 class WordBookService:
     """Business methods for word‑book CRUD operations."""
+
+    _instance: "WordBookService" | None = None
+
+    def __init__(self) -> None:
+        self._repo = WordBookRepository()
+
+    @classmethod
+    def get_instance(cls) -> "WordBookService":
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
 
     # ------------------------------------------------------------------
     # READ
@@ -60,3 +72,11 @@ class WordBookService:
     def delete_word(book_name: str, book_color: str, word: str) -> None:
         """Delete a word from the specified book."""
         WordRepository.delete_word(book_name, book_color, word)
+
+    # ------------------------------------------------------------------
+    # WORD BOOK MANIPULATION
+    # ------------------------------------------------------------------
+    def rename(self, book: WordBook, new_name: str) -> WordBook:
+        """Rename a word book on disk and return the updated domain object."""
+        updated = self._repo.rename(book, new_name)
+        return updated

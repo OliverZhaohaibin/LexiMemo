@@ -20,7 +20,31 @@ class WordBook:
 class WordBookRepository:
     """负责磁盘 / SQLite 的增删改查，这里只给骨架示例。"""
 
-    def rename(self, book: WordBook, new_name: str) -> WordBook: ...
+    def rename(self, book: WordBook, new_name: str) -> WordBook:
+        import os, sys
+
+        base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        books_dir = os.path.join(base_dir, "books")
+
+        old_folder = f"books_{book.name}_{book.color}"
+        new_folder = f"books_{new_name}_{book.color}"
+        old_path = os.path.join(books_dir, old_folder)
+        new_path = os.path.join(books_dir, new_folder)
+
+        if old_path != new_path:
+            if os.path.exists(new_path):
+                raise FileExistsError(f"目标文件夹 '{new_folder}' 已存在。")
+            if os.path.exists(old_path):
+                os.rename(old_path, new_path)
+            else:
+                os.makedirs(new_path, exist_ok=True)
+                from db import init_db
+                init_db(os.path.join(new_path, "wordbook.db"))
+
+        book.name = new_name
+        book.path = Path(new_path)
+        return book
+
     def delete(self, book: WordBook) -> None: ...
     def save(self, book: WordBook) -> None: ...
     def load_all(self) -> List[WordBook]: ...

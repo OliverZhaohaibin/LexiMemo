@@ -8,8 +8,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt
 
-from styles import PRIMARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE, TAG_LABEL_STYLE
-from font import meaning_font, main_word_font, sentence_font, sentence_font_platte, list_word_font
+from UI.styles import PRIMARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE, TAG_LABEL_STYLE
+from UI.font import meaning_font, main_word_font, sentence_font, sentence_font_platte, list_word_font
 
 class WordDetailPanel(QWidget):
     """右侧只读详情视图。"""

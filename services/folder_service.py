@@ -235,6 +235,12 @@ class FolderService:
 
                 folder_btn.update_folder_icon = getattr(folder_btn, "update_folder_icon", lambda: None)
                 folder_btn.update_folder_icon()
+                if folder_btn.is_expanded:
+                    for sb in folder_btn.sub_buttons:
+                        sb.show()
+                else:
+                    for sb in folder_btn.sub_buttons:
+                        sb.hide()
                 new_main_buttons.append(folder_btn)
                 processed.add(path or f"{name}_{color}")
 

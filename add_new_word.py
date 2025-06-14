@@ -177,11 +177,18 @@ class WordEntryUI(QWidget):
 
     def remove_meaning_example_row(self):
         if len(self.meaning_inputs) > 1:
-            row = len(self.meaning_inputs) - 1
-            for i in range(4):
-                widget = self.meaning_example_grid.itemAtPosition(row, i).widget()
-                if widget:
-                    widget.deleteLater()
+            pair_index = len(self.meaning_inputs) - 1
+            base_row = pair_index * 2
+
+            # 遍历待删除的两行（错误提示行和输入控件行）
+            for r in (base_row, base_row + 1):
+                for c in range(4):
+                    item = self.meaning_example_grid.itemAtPosition(r, c)
+                    if item is not None:
+                        widget = item.widget()
+                        if widget is not None:
+                            widget.deleteLater()
+
             self.meaning_inputs.pop()
 
     def add_related_input_field(self, index):

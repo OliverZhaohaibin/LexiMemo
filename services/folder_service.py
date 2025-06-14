@@ -64,11 +64,10 @@ class FolderService:
 
             # 点击 → 打开单词本
             if hasattr(self.content, "show_word_book"):
-                if btn.receivers(btn.clicked) > 0:
-                    try:
-                        btn.clicked.disconnect()
-                    except (RuntimeError, TypeError):
-                        pass
+                try:
+                    btn.clicked.disconnect()
+                except (RuntimeError, TypeError):
+                    pass
                 btn.clicked.connect(lambda _=False, p=btn.path: self.content.show_word_book(p))
 
             buttons.append(btn)

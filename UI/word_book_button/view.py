@@ -271,6 +271,21 @@ class WordBookButtonView(QPushButton):
         if self._edit_mode:
             self.delete_btn.raise_()
 
+    def _draw_base_template(self) -> QPixmap:
+        pix = QPixmap(self.icon_size, self.icon_size)
+        pix.fill(Qt.transparent)
+        painter = QPainter(pix)
+        painter.setRenderHint(QPainter.Antialiasing)
+        margin = int(self.icon_size * 0.15)
+        rect = pix.rect().adjusted(margin, margin, -margin, -margin)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(Qt.white)
+        painter.drawRoundedRect(rect, 10, 10)
+        painter.setPen(QColor(220, 220, 220))
+        painter.drawLine(rect.center().x(), rect.top(), rect.center().x(), rect.bottom())
+        painter.end()
+        return pix
+
     # ===================== 暗化动画 ===================== #
     def _set_dark(self, value: float):
         self._dark_opacity = max(0.0, min(1.0, value))
@@ -339,16 +354,24 @@ class WordBookButtonView(QPushButton):
 
         src = icon_dir / _BASE_ICON_NAME
         if not src.exists():
-            pix = QPixmap(self.icon_size, self.icon_size); pix.fill(QColor(color))
-            pix.save(out_path)
-            return str(out_path)
+            base_pix = self._draw_base_template()
+        else:
+            base_pix = QPixmap(str(src))
+            if base_pix.isNull():
+                base_pix = self._draw_base_template()
+        base_pix = base_pix.scaled(
+            self.icon_size,
+            self.icon_size,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
+        )
 
         try:
             from PIL import Image
         except Exception:
             Image = None
 
-        if Image is not None:
+        if Image is not None and src.exists() and not base_pix.isNull():
             try:
                 im = Image.open(src).convert("RGBA")
                 r, g, b = QColor(color).red(), QColor(color).green(), QColor(color).blue()
@@ -362,19 +385,6 @@ class WordBookButtonView(QPushButton):
             except Exception:
                 pass
 
-        # ---- Qt fallback when Pillow is unavailable ----
-        base_pix = QPixmap(str(src)).scaled(
-            self.icon_size,
-            self.icon_size,
-            Qt.KeepAspectRatio,
-            Qt.SmoothTransformation,
-        )
-        if base_pix.isNull():
-            pix = QPixmap(self.icon_size, self.icon_size)
-            pix.fill(QColor(color))
-            pix.save(out_path)
-            return str(out_path)
-
         colored = QPixmap(base_pix.size())
         colored.fill(QColor(color))
         painter = QPainter(colored)
@@ -383,6 +393,7 @@ class WordBookButtonView(QPushButton):
         painter.end()
         colored.save(out_path)
         return str(out_path)
+
 
     def update_folder_icon(self) -> None:
         from UI.folder_ui.api import create_folder_icon

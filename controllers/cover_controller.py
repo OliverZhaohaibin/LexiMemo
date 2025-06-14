@@ -34,8 +34,17 @@ class CoverController(QObject):
         self._load_buttons_and_layout()
         self._build_word_index()
         v.scroll_area.viewport().installEventFilter(self)
-        view.destroyed.connect(lambda *_: view.scroll_area.viewport().removeEventFilter(
-            self) if view.scroll_area and view.scroll_area.viewport() else None)
+
+        import weakref
+        ctrl_ref = weakref.ref(self)
+
+        def _cleanup(*_):
+            ctrl = ctrl_ref()
+            vp = view.scroll_area.viewport() if view.scroll_area else None
+            if ctrl and vp:
+                vp.removeEventFilter(ctrl)
+
+        view.destroyed.connect(_cleanup)
 
     def _get_content_buttons(self) -> list[WordBookButton]:
         if hasattr(self.view.content, 'buttons'):
@@ -89,11 +98,15 @@ class CoverController(QObject):
             btn.renameRequested.connect(self._handle_button_rename)
 
         if hasattr(btn, 'deleteRequested'):
-            try:
-                btn.deleteRequested.disconnect(lambda b=btn: self.delete_word_book(b))  # Use self.delete_word_book
-            except (TypeError, RuntimeError):
-                pass
-            btn.deleteRequested.connect(lambda b=btn: self.delete_word_book(b))
+            handler = getattr(btn, "_del_handler", None)
+            if handler:
+                try:
+                    btn.deleteRequested.disconnect(handler)
+                except (TypeError, RuntimeError):
+                    pass
+            handler = lambda b=btn: self.delete_word_book(b)
+            btn._del_handler = handler
+            btn.deleteRequested.connect(handler)
 
         # For opening regular wordbooks (not folders, not the new_book_button)
         if hasattr(btn, 'openRequested') and not btn.is_folder and not getattr(btn, 'is_new_button', False):

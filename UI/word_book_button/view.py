@@ -381,10 +381,9 @@ class WordBookButtonView(QPushButton):
                 )
                 datas = []
                 for r, g, b, a in im.getdata():
-                    if a == 0:
+                    if r >= 235 and g >= 235 and b >= 235:
+                        # Treat near-white regions as transparent background
                         datas.append((255, 255, 255, 0))
-                    elif r >= 235 and g >= 235 and b >= 235:
-                        datas.append((255, 255, 255, a))
                     else:
                         datas.append((target_r, target_g, target_b, a))
                 im.putdata(datas)

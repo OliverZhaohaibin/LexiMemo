@@ -34,7 +34,7 @@ def create_folder_icon(
     cell_size: int = 120,                 # ⬆️ 缩略图默认尺寸
     grid_size: Tuple[int, int] = (3, 3),
     spacing: int = 1,                    # ⬇️ 间距默认
-    bg_color: Tuple[int, int, int, int] = (255, 255, 255, 0),
+    bg_color: Tuple[int, int, int, int] = (0, 0, 0, 0),
 ) -> str:
     """
     将最多 9 张子图标拼成一个九宫格缩略图（iOS 文件夹风格）。

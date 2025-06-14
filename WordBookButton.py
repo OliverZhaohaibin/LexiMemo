@@ -126,13 +126,14 @@ class WordBookButton(QPushButton):
         base_image = Image.open(base_image_path).convert("RGBA")
         datas = base_image.getdata()
         new_data = []
-        target_color_pil = Image.new("RGBA", (1, 1), color).getdata()[0]
+        target_r, target_g, target_b = Image.new("RGB", (1, 1), color).getpixel((0, 0))
 
-        for item in datas:
-            if not (item[0] > 200 and item[1] > 200 and item[2] > 200 and item[3] < 50):
-                new_data.append(target_color_pil)
-            else:
+        for r, g, b, a in datas:
+            if r >= 235 and g >= 235 and b >= 235:
+                # Treat near-white regions as fully transparent background
                 new_data.append((255, 255, 255, 0))
+            else:
+                new_data.append((target_r, target_g, target_b, a))
 
         base_image.putdata(new_data)
         base_image.save(icon_path)

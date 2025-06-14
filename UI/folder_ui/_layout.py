@@ -2,6 +2,8 @@
 from PySide6.QtCore import QPoint, QRect, QParallelAnimationGroup  # Moved QParallelAnimationGroup here for broader use
 from typing import List, TYPE_CHECKING, Optional
 
+from ._background import update_all_folder_backgrounds
+
 if TYPE_CHECKING:
     from UI.word_book_button import WordBookButton  # Or your specific button class
 
@@ -152,40 +154,34 @@ class FolderLayoutMixin:
             return  # 组件初始化异常才早退
 
         available_width = (
-                self.scroll_content.width()
-                or self.scroll_area.viewport().width()
+            self.scroll_content.width() or self.scroll_area.viewport().width()
         )
         bw, bh, sp = self.button_width, self.button_height, self.spacing
-        top_margin = getattr(self, "top_margin", 40)
 
-        current_x = sp
-        current_y = sp + top_margin
-        buttons_per_row = max(1, (available_width - sp) // (bw + sp))
+        # 使用动画模块的 `_calculate_final_positions` 根据当前所有文件夹展
+        # 开状态计算最终布局，从而避免按钮之间出现重叠。
+        final_pos_map, new_book_target = self._calculate_final_positions(
+            None, False
+        )
 
-        # ---------- 1) 布局主按钮 ----------
-        for idx, btn in enumerate(self.buttons):
-            if idx and idx % buttons_per_row == 0:  # 换行
-                current_x = sp
-                current_y += bh + sp
+        # ---------- 1) 移动所有按钮到计算后的目标位置 ----------
+        for btn, pos in final_pos_map.items():
+            if not getattr(btn, "is_dragging", False):
+                btn.move(pos)
 
-            btn.move(current_x, current_y)
-            current_x += bw + sp
-
-        # ---------- 2) 布局「新建单词本」按钮（始终可见） ----------
+        # ---------- 2) 移动 "新建单词本" 按钮 ----------
         if hasattr(self, "new_book_button"):
-            if not self.buttons:  # 没任何主按钮
-                current_x, current_y = sp, sp + top_margin
-            elif current_x + bw > available_width - sp:  # 当前行放不下
-                current_x = sp
-                current_y += bh + sp
-
-            self.new_book_button.move(current_x, current_y)
+            self.new_book_button.move(new_book_target)
 
         # ---------- 3) 更新 scroll_content 的最小尺寸 ----------
-        total_items = len(self.buttons) + (1 if hasattr(self, "new_book_button") else 0)
-        rows = (total_items + buttons_per_row - 1) // buttons_per_row
-        min_h = top_margin + rows * (bh + sp) + sp
-        self.scroll_content.setMinimumSize(available_width, min_h)
+        if final_pos_map:
+            max_bottom = max(p.y() for p in final_pos_map.values()) + bh + sp
+        else:
+            max_bottom = sp + bh
+        self.scroll_content.setMinimumSize(available_width, max_bottom)
+
+        # ---------- 4) 更新文件夹背景框 ----------
+        update_all_folder_backgrounds(self, bw, bh)
 
     def update_button_order(self, dragged_button: 'WordBookButton'):
         if dragged_button.is_sub_button or not hasattr(self, "buttons"):

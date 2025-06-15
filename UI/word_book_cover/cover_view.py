@@ -131,9 +131,10 @@ class CoverView(QWidget):
         self.suggestions_list.hide()
 
     def _on_suggestion_clicked(self, item) -> None:
+        word = item.text()
         self.hide_suggestions()
-        self.search_bar.setText(item.text())
-        self.suggestionSelected.emit(item.text())
+        self.search_bar.setText(word)
+        self.suggestionSelected.emit(word)
 
     # ------------------------------------------------------------
     #      让 ↑ ↓ ↵ 在搜索框里直接操作建议列表

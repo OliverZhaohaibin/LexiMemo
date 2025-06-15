@@ -329,7 +329,9 @@ class WordBookButtonView(QPushButton):
         # 4. 暗化遮罩
         if self._dark_opacity > 0.01:
             c = QColor(0, 0, 0, int(150 * self._dark_opacity))
-            painter.fillRect(self.rect(), c)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(c)
+            painter.drawRoundedRect(self.rect(), 14, 14)
 
         # 5. 文字
         text_y = self.icon_size + 6

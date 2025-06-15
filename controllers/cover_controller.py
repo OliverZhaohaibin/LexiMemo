@@ -300,7 +300,8 @@ class CoverController(QObject):
         self._build_word_index()
 
     def _build_word_index(self) -> None:
-        self.word_index: dict[str, list[tuple[str, str]]] = {}
+        self.word_index: dict[str, list[tuple[str, str, str]]] = {}
+        self.word_variants: dict[str, set[str]] = {}
 
         buttons_to_index = []
         for btn_or_folder in self._get_content_buttons():
@@ -316,9 +317,12 @@ class CoverController(QObject):
             try:
                 words_in_book = WordBookService.list_words(btn.text(), btn.color_str)  # Use color_str
                 for w_data in words_in_book:
-                    word_text = str(w_data.get("单词", "")).strip().lower()
-                    if not word_text: continue
-                    self.word_index.setdefault(word_text, []).append((btn.path, btn.text()))
+                    word_raw = str(w_data.get("单词", "")).strip()
+                    if not word_raw:
+                        continue
+                    word_lc = word_raw.lower()
+                    self.word_index.setdefault(word_lc, []).append((word_raw, btn.path, btn.text()))
+                    self.word_variants.setdefault(word_lc, set()).add(word_raw)
             except Exception:
                 pass
 
@@ -329,11 +333,27 @@ class CoverController(QObject):
         if not text_l:
             self.view.hide_suggestions()
             return
-        matches = [w for w in self.word_index if text_l in w][:50]
+
+        matches: list[str] = []
+        for w_lc, variants in self.word_variants.items():
+            if text_l in w_lc:
+                for v in sorted(variants):
+                    if v not in matches:
+                        matches.append(v)
+                        if len(matches) >= 50:
+                            break
+            if len(matches) >= 50:
+                break
+
         self.view.show_suggestions(matches)
 
     def _open_word_by_text(self, word: str) -> None:
-        path_bookname_pairs = self.word_index.get(word.lower(), [])
+        entries = self.word_index.get(word.lower(), [])
+        path_bookname_pairs = [
+            (p, b_name)
+            for orig, p, b_name in entries
+            if orig == word
+        ]
         if not path_bookname_pairs: return
 
         if len(path_bookname_pairs) == 1:

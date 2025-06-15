@@ -32,7 +32,8 @@ class DraggableButton(QPushButton):
         # 新增：文件夹展开/关闭动画组属性，防止重复触发
         self.folder_animation_group = None
         # ➤➤➤ 新增：删除小按钮（右上角 ✕） ← iOS 风格
-        self.delete_button = QPushButton("✕", self)
+        # 使用简单的 'X' 以保证各平台都能正确显示
+        self.delete_button = QPushButton("X", self)
         self.delete_button.setFixedSize(22, 22)
         self.delete_button.move(self.width() - self.delete_button.width(), 0)
         self.delete_button.setStyleSheet("""

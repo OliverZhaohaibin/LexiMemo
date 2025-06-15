@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QListWidget, QLabel
 )
 from UI.word_book_cover.cover_content import CoverContent
-from UI.styles import SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE
+from UI.styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, TEXT_EDIT_STYLE
 
 
 class CoverView(QWidget):
@@ -84,6 +84,11 @@ class CoverView(QWidget):
     def _toggle_edit(self) -> None:
         entering = self.edit_btn.text() == "编辑"
         self.edit_btn.setText("退出" if entering else "编辑")
+        # 切换按钮样式：编辑→退出时改用红色样式
+        if entering:
+            self.edit_btn.setStyleSheet(RED_BUTTON_STYLE)
+        else:
+            self.edit_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
         self.editToggled.emit(entering)
 
     # —— 清空 / 添加按钮 —— #

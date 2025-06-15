@@ -204,22 +204,18 @@ class CoverController(QObject):
             return
 
         menu = QMenu(self.view)
-        # Rename for any button (except the main new_book_button) in edit mode
-        if self.edit_mode and not is_the_main_new_book_btn:
-            rename_action = menu.addAction("重命名")
-            rename_action.triggered.connect(lambda b=button: self._rename_button_from_context(b))
-
-        # Delete for any button (except the main new_book_button)
         if not is_the_main_new_book_btn:
-            delete_action = menu.addAction("删除")
-            # delete_action.triggered.connect(lambda b=button: self.delete_word_book(b))
-            # Connect to button's deleteRequested signal which is already wired to self.delete_word_book
-            delete_action.triggered.connect(button.deleteRequested)
+            # Rename is available regardless of edit mode
+            rename_action = menu.addAction("重命名")
+            rename_action.triggered.connect(
+                lambda checked=False, b=button: self._rename_button_from_context(b)
+            )
 
-        # Open location for non-folders, non-main_new_book_button
-        if not button.is_folder and button.path and not is_the_main_new_book_btn:
-            open_folder_action = menu.addAction("打开文件位置")
-            open_folder_action.triggered.connect(lambda b=button: self._open_book_location(b))
+            # Delete action
+            delete_action = menu.addAction("删除")
+            delete_action.triggered.connect(
+                lambda checked=False, b=button: b.deleteRequested.emit()
+            )
 
         if menu.actions():
             menu.exec_(button.mapToGlobal(pos))

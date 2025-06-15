@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLineEdit, QLabel, QPushButton, QHBoxLayout, QMessageBox,
     QInputDialog, QGridLayout, QFrame, QTextEdit, QScrollArea, QCheckBox
 )
+from UI.font import normal_font
 from PySide6.QtCore import Signal
 
 from datetime import datetime
@@ -340,6 +341,7 @@ class WordEntryUI(QWidget):
 
 def show_word_entry_ui():
     app = QApplication(sys.argv)
+    app.setFont(normal_font)
     window = WordEntryUI()
     window.show()
     sys.exit(app.exec_())

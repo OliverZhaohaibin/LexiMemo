@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QLineEdit, QMessageBox, QFrame, QTextEdit
 )
-from UI.font import meaning_font, main_word_font, list_word_font, sentence_font
+from UI.font import meaning_font, main_word_font, list_word_font, sentence_font, normal_font
 from UI.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE
 from db_memory import load_memory_data, save_memory_data, get_review_words, update_word_memory_status
 
@@ -374,6 +374,7 @@ class MemoryCurveApp(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setFont(normal_font)
     if len(sys.argv) > 1:
         path = sys.argv[1]
         window = MemoryCurveApp(path)

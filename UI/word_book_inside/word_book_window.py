@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QApplication
+from UI.font import normal_font
 from PySide6.QtCore import Qt
 
 from UI.word_book_inside.word_list_panel import WordListPanel
@@ -104,6 +105,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     app = QApplication(sys.argv)
+    app.setFont(normal_font)
     win = WordBookWindow(sys.argv[1])
     win.show()
     sys.exit(app.exec())

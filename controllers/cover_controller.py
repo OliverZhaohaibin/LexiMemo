@@ -330,6 +330,11 @@ class CoverController(QObject):
         text_l = text.strip().lower()
         self.fs.highlight_search(text, self._get_content_buttons())
 
+        if getattr(self.view, "suppress_suggestions_once", False):
+            self.view.hide_suggestions()
+            self.view.suppress_suggestions_once = False
+            return
+
         if not text_l:
             self.view.hide_suggestions()
             return

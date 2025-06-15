@@ -71,6 +71,7 @@ class CoverView(QWidget):
         self.suggestions_list.setFocusPolicy(Qt.NoFocus)
         self.suggestions_list.itemClicked.connect(self._on_suggestion_clicked)
         self.suggestions_list.hide()
+        self.suppress_suggestions_once = False
 
         # ========= ⑤ 信号外发 =========
         self.edit_btn.clicked.connect(self._toggle_edit)
@@ -132,6 +133,7 @@ class CoverView(QWidget):
 
     def _on_suggestion_clicked(self, item) -> None:
         word = item.text()
+        self.suppress_suggestions_once = True
         self.hide_suggestions()
         self.search_bar.setText(word)
         self.suggestionSelected.emit(word)
@@ -140,26 +142,31 @@ class CoverView(QWidget):
     #      让 ↑ ↓ ↵ 在搜索框里直接操作建议列表
     # ------------------------------------------------------------
     def eventFilter(self, obj, event):
-        if obj is self.search_bar and event.type() == QEvent.KeyPress:
-            if not self.suggestions_list.isVisible():
+        if obj is self.search_bar:
+            if event.type() == QEvent.KeyPress:
+                if self.suggestions_list.isVisible():
+                    key = event.key()
+                    row = self.suggestions_list.currentRow()
+                    count = self.suggestions_list.count()
+
+                    if key == Qt.Key_Down:
+                        row = 0 if row < 0 else min(row + 1, count - 1)
+                        self.suggestions_list.setCurrentRow(row)
+                        return True
+                    elif key == Qt.Key_Up:
+                        row = count - 1 if row < 0 else max(row - 1, 0)
+                        self.suggestions_list.setCurrentRow(row)
+                        return True
+                    elif key in (Qt.Key_Return, Qt.Key_Enter):
+                        item = self.suggestions_list.currentItem()
+                        if item:
+                            self._on_suggestion_clicked(item)
+                        return True
+                    elif key == Qt.Key_Escape:
+                        self.hide_suggestions()
+                        return True
                 return super().eventFilter(obj, event)
-
-            key = event.key()
-            row = self.suggestions_list.currentRow()
-            count = self.suggestions_list.count()
-
-            if key == Qt.Key_Down:
-                row = 0 if row < 0 else min(row + 1, count - 1)
-                self.suggestions_list.setCurrentRow(row)
-                return True
-            elif key == Qt.Key_Up:
-                row = count - 1 if row < 0 else max(row - 1, 0)
-                self.suggestions_list.setCurrentRow(row)
-                return True
-            elif key in (Qt.Key_Return, Qt.Key_Enter):
-                item = self.suggestions_list.currentItem()
-                if item:
-                    self._on_suggestion_clicked(item)
-                return True
+            elif event.type() == QEvent.FocusOut:
+                self.hide_suggestions()
 
         return super().eventFilter(obj, event)

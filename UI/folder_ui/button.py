@@ -196,8 +196,8 @@ class DraggableButton(QPushButton):
             self.is_dragging = True
             self.setStyleSheet("background-color: lightblue;")
 
-            # —— ③ 折叠文件夹 + 创建补偿计时器 —— #
-            if not self.is_sub_button and callable(getattr(self.app, "collapse_all_folders", None)):
+            # —— ③ 编辑模式拖动任意按钮：折叠所有文件夹，方便排序 —— #
+            if callable(getattr(self.app, "collapse_all_folders", None)):
                 scroll_area = getattr(self.app, "scroll_area", None)
                 old_scroll  = scroll_area.verticalScrollBar().value() if scroll_area else None
                 self.app.collapse_all_folders()
@@ -297,8 +297,9 @@ class DraggableButton(QPushButton):
                     self.app.merge_folders()
                 self.app.finalize_button_order()
                 self.app.hide_frame()
-                if not self.is_sub_button:
-                    self.app.expand_all_folders()
+
+            # 拖拽结束后恢复之前的展开状态（无论拖动哪种按钮）
+            self.app.expand_all_folders()
 
             self.app.update_button_positions()
 

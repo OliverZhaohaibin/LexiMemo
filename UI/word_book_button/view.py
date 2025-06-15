@@ -82,6 +82,8 @@ class WordBookButtonView(QPushButton):
         self._edit_mode = False
         self._drag_offset: QPoint | None = None
         self._dragging = False
+        # Track if we collapsed folders when this button press began
+        self._collapsed_for_drag = False
         self.rename_source = "edit"
 
         # —— 内联重命名 & 删除按钮 —— #
@@ -141,6 +143,11 @@ class WordBookButtonView(QPushButton):
                 self._drag_offset = ev.pos()
                 self._dragging = False
                 self.raise_()
+                if self.is_folder and hasattr(self.app, 'collapse_all_folders'):
+                    self.app.collapse_all_folders()
+                    self._collapsed_for_drag = True
+                else:
+                    self._collapsed_for_drag = False
         super().mousePressEvent(ev)
 
     def mouseReleaseEvent(self, ev):  # noqa: N802
@@ -162,8 +169,6 @@ class WordBookButtonView(QPushButton):
                             self.app.merge_folders()
                         self.app.finalize_button_order()
                         self.app.hide_frame()
-                        if not self.is_sub_button and hasattr(self.app, 'expand_all_folders'):
-                            self.app.expand_all_folders()
                     if hasattr(self.app, 'controller') and hasattr(self.app.controller, 'save_current_layout'):
                         self.app.controller.save_current_layout()
                 if hasattr(self.parent(), "update_button_positions"):
@@ -179,6 +184,9 @@ class WordBookButtonView(QPushButton):
                         pass
                 else:
                     self.openRequested.emit()
+        if self._collapsed_for_drag and hasattr(self.app, 'expand_all_folders'):
+            self.app.expand_all_folders()
+            self._collapsed_for_drag = False
         super().mouseReleaseEvent(ev)
 
     def mouseMoveEvent(self, ev):  # noqa: N802

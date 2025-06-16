@@ -40,6 +40,15 @@ def _create_sub_button_instance(
         )
 
     sub_btn.hide()                                # 初始隐藏，动画/布局后再显示
+
+    # Wire signals if controller available
+    controller = getattr(app_instance, "controller", None)
+    if controller and hasattr(controller, "_wire_button_signals"):
+        try:
+            controller._wire_button_signals(sub_btn)
+        except Exception:
+            pass
+
     return sub_btn
 
 
@@ -48,6 +57,14 @@ def _internal_add_button_to_folder(button_to_add: WordBookButton, folder: WordBo
     sub_btn = _create_sub_button_instance(button_to_add, folder, scroll_content, app_instance)
     folder.sub_buttons.append(sub_btn)
     folder.update_folder_icon()
+
+    controller = getattr(app_instance, "controller", None)
+    if controller and hasattr(controller, "_wire_button_signals"):
+        try:
+            controller._wire_button_signals(sub_btn)
+        except Exception:
+            pass
+
     return sub_btn
 
 
@@ -75,6 +92,13 @@ def _internal_remove_sub_button_from_folder(sub_btn_to_remove: WordBookButton, m
 
         if hasattr(parent_folder, 'update_folder_icon'):
             parent_folder.update_folder_icon()
+
+        controller = getattr(getattr(sub_btn_to_remove, 'app', None), 'controller', None)
+        if controller and hasattr(controller, "_wire_button_signals"):
+            try:
+                controller._wire_button_signals(sub_btn_to_remove)
+            except Exception:
+                pass
         return parent_folder
     return None
 
@@ -94,6 +118,14 @@ def _internal_check_and_remove_folder_if_needed(folder_btn: WordBookButton, main
                 # Add to a sensible position, e.g., where the folder was or at the end
                 main_buttons_list.append(btn_to_repromote)  # Simplest: add to end
             btn_to_repromote.show()
+
+        controller = getattr(getattr(folder_btn, 'app', None), 'controller', None)
+        if controller and hasattr(controller, "_wire_button_signals"):
+            for b in folder_btn.sub_buttons:
+                try:
+                    controller._wire_button_signals(b)
+                except Exception:
+                    pass
 
         if hasattr(folder_btn, 'background_frame') and folder_btn.background_frame:
             folder_btn.background_frame.hide()
@@ -132,6 +164,13 @@ class FolderOperationMixin:
         dissolved = _internal_check_and_remove_folder_if_needed(parent_folder, self.buttons, self.scroll_content)
 
         self.update_button_positions()  # Refresh layout
+
+        controller = getattr(self, "controller", None)
+        if controller and hasattr(controller, "_wire_button_signals"):
+            try:
+                controller._wire_button_signals(sub_btn)
+            except Exception:
+                pass
 
         if hasattr(self, 'controller') and hasattr(self.controller, 'save_current_layout'):
             self.controller.save_current_layout()
@@ -209,6 +248,15 @@ class FolderOperationMixin:
         sub1 = _create_sub_button_instance(btn1, folder_btn, self.scroll_content, self)
         sub2 = _create_sub_button_instance(btn2, folder_btn, self.scroll_content, self)
         folder_btn.sub_buttons.extend([sub1, sub2])
+
+        controller = getattr(self, "controller", None)
+        if controller and hasattr(controller, "_wire_button_signals"):
+            try:
+                controller._wire_button_signals(folder_btn)
+                controller._wire_button_signals(sub1)
+                controller._wire_button_signals(sub2)
+            except Exception:
+                pass
 
         # 移除原按钮
         for old in (btn1, btn2):

@@ -79,6 +79,9 @@ class CoverController(QObject):
         if layout:
             self.fs.apply_layout(layout, current_buttons_in_content)
 
+        for btn in self.view.content.buttons:
+            self._wire_button_signals(btn)
+
         update_all_folder_icons(self.view.content)
             # apply_layout might change the order or structure within self.view.content.buttons
             # Re-wire signals for buttons that might have been re-instantiated or reconfigured by apply_layout

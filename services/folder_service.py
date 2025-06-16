@@ -236,6 +236,15 @@ class FolderService:
                     for sb in folder_btn.sub_buttons:
                         sb.hide()
 
+                controller = getattr(self.content, "controller", None)
+                if controller and hasattr(controller, "_wire_button_signals"):
+                    try:
+                        controller._wire_button_signals(folder_btn)
+                        for sb in folder_btn.sub_buttons:
+                            controller._wire_button_signals(sb)
+                    except Exception:
+                        pass
+
                 folder_btn.show()
                 new_main_buttons.append(folder_btn)
                 processed.add(path or f"{name}_{color}")
@@ -247,6 +256,14 @@ class FolderService:
                 word_btn.app   = self.content
                 word_btn.is_folder = False
                 word_btn.setFixedSize(self.content.button_width, self.content.button_height)
+
+                controller = getattr(self.content, "controller", None)
+                if controller and hasattr(controller, "_wire_button_signals"):
+                    try:
+                        controller._wire_button_signals(word_btn)
+                    except Exception:
+                        pass
+
                 new_main_buttons.append(word_btn)
                 processed.add(path or f"{name}_{color}")
 

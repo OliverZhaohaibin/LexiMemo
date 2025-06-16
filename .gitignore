@@ -10,5 +10,5 @@
 /打包/
 /wordapp/
 /cover_layout.json
-UI/folder_ui/__pycache__/button.cpython-312.pyc and b/Folder_UI/__pycache__/button.cpython-312.pyc
-/UI/folder_ui/common/__pycache__/folderUI_API.cpython-312.pyc
+UI/folder_ui/__pycache__/
+/UI/folder_ui/common/__pycache__/

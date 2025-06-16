@@ -93,3 +93,10 @@ def create_folder_icon(
     out_path = Path(out_path)
     canvas.save(out_path)
     return str(out_path)
+
+def update_all_folder_icons(app) -> None:
+    """Update folder icons for every folder button under ``app``."""
+    for btn in getattr(app, "buttons", []):
+        if getattr(btn, "is_folder", False) and hasattr(btn, "update_folder_icon"):
+            btn.update_folder_icon()
+

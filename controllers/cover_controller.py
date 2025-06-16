@@ -8,6 +8,7 @@ from PySide6.QtGui import QDesktopServices
 
 from UI.word_book_cover.cover_view import CoverView
 from services.folder_service import FolderService
+from UI.folder_ui.api import update_all_folder_icons
 from services.cover_layout_service import CoverLayoutService
 from UI.word_book_button import WordBookButton  # This now points to the enhanced WordBookButtonView
 from services.wordbook_service import WordBookService
@@ -77,6 +78,8 @@ class CoverController(QObject):
         layout = self.ls.load()
         if layout:
             self.fs.apply_layout(layout, current_buttons_in_content)
+
+        update_all_folder_icons(self.view.content)
             # apply_layout might change the order or structure within self.view.content.buttons
             # Re-wire signals for buttons that might have been re-instantiated or reconfigured by apply_layout
             # This is a bit tricky. Ideally, apply_layout should return the final list or ensure signals remain.

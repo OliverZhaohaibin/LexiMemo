@@ -36,7 +36,12 @@ from ._background import (
 )
 from ._hints import FolderHintMixin
 from ._frame import ButtonFrame # This is the generic frame for hints
-from ._utils import create_folder_icon, calculate_button_distance, is_button_in_frame
+from ._utils import (
+    create_folder_icon,
+    calculate_button_distance,
+    is_button_in_frame,
+    update_all_folder_icons,
+)
 
 __all__: list[str] = [
     "FolderLayoutMixin",
@@ -56,5 +61,6 @@ __all__: list[str] = [
     "create_folder_icon",
     "calculate_button_distance",
     "is_button_in_frame",
+    "update_all_folder_icons",
 ]
 # UI/folder_ui/api.py结束

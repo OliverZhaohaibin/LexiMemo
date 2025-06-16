@@ -235,6 +235,8 @@ class FolderService:
                 else:
                     for sb in folder_btn.sub_buttons:
                         sb.hide()
+
+                folder_btn.show()
                 new_main_buttons.append(folder_btn)
                 processed.add(path or f"{name}_{color}")
 

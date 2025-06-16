@@ -101,6 +101,15 @@ class CoverView(QWidget):
         for btn in list(getattr(self.content, "buttons", [])):
             if getattr(btn, "is_new_button", False):
                 continue
+
+            if getattr(btn, "is_folder", False):
+                for sub in getattr(btn, "sub_buttons", []):
+                    sub.setParent(None)
+                    sub.deleteLater()
+
+                if hasattr(btn, "background_frame") and btn.background_frame:
+                    btn.background_frame.deleteLater()
+
             btn.setParent(None)
             btn.deleteLater()
             self.content.buttons.remove(btn)

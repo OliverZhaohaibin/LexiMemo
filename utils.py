@@ -1,7 +1,6 @@
 #_utils.py
 import os
 import sys
-print("开始加载pandas")
 import pandas as pd
 
 def get_word_book_path(book_name, color):

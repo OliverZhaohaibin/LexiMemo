@@ -9,6 +9,14 @@
 /dist/
 /打包/
 /wordapp/
-/cover_layout.json
-UI/folder_ui/__pycache__/
+/cover_layout.json/
+/UI/folder_ui/__pycache__/
 /UI/folder_ui/common/__pycache__/
+/controllers/__pycache__/
+/repositories/__pycache__/
+/LexiMemo/services/__pycache__/
+/UI/__pycache__/
+/UI/element/__pycache__/
+/UI/word_book_button/__pycache__/
+/UI/word_book_cover/__pycache__/
+/UI/word_book_inside/__pycache__/

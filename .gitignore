@@ -15,7 +15,7 @@ UI/word_book_button/icon/
 /UI/folder_ui/common/__pycache__/
 /controllers/__pycache__/
 /repositories/__pycache__/
-/LexiMemo/services/__pycache__/
+/services/__pycache__/
 /UI/__pycache__/
 /UI/element/__pycache__/
 /UI/word_book_button/__pycache__/

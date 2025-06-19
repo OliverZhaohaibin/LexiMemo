@@ -143,9 +143,13 @@ class WordBookButtonView(QPushButton):
                 self._drag_offset = ev.pos()
                 self._dragging = False
                 self.raise_()
-                if self.is_folder and hasattr(self.app, 'collapse_all_folders'):
-                    self.app.collapse_all_folders()
-                    self._collapsed_for_drag = True
+                # Collapse all folders for drag-reordering of *any* button
+                if hasattr(self.app, 'collapse_all_folders'):
+                    try:
+                        self.app.collapse_all_folders()
+                        self._collapsed_for_drag = True
+                    except Exception:
+                        self._collapsed_for_drag = False
                 else:
                     self._collapsed_for_drag = False
         super().mousePressEvent(ev)
@@ -167,13 +171,15 @@ class WordBookButtonView(QPushButton):
                     else:
                         if self.app.frame_visible and self.app.is_button_in_frame(self):
                             self.app.merge_folders()
-                        self.app.finalize_button_order()
+                        if not self._collapsed_for_drag:
+                            self.app.finalize_button_order()
                         self.app.hide_frame()
                     if hasattr(self.app, 'controller') and hasattr(self.app.controller, 'save_current_layout'):
                         self.app.controller.save_current_layout()
                 if hasattr(self.parent(), "update_button_positions"):
                     try:
-                        self.parent().update_button_positions()
+                        if not self._collapsed_for_drag:
+                            self.parent().update_button_positions()
                     except Exception:
                         pass
             elif not self._edit_mode and self.rect().contains(ev.pos()):
@@ -184,9 +190,8 @@ class WordBookButtonView(QPushButton):
                         pass
                 else:
                     self.openRequested.emit()
-        if self._collapsed_for_drag and hasattr(self.app, 'expand_all_folders'):
-            self.app.expand_all_folders()
-            self._collapsed_for_drag = False
+        if self._collapsed_for_drag:
+            self._expand_after_drag()
         super().mouseReleaseEvent(ev)
 
     def mouseMoveEvent(self, ev):  # noqa: N802
@@ -278,6 +283,26 @@ class WordBookButtonView(QPushButton):
         self.delete_btn.setVisible(self._edit_mode)
         if self._edit_mode:
             self.delete_btn.raise_()
+
+    def _expand_after_drag(self) -> None:
+        """Expand folders previously collapsed for drag."""
+        if self._collapsed_for_drag:
+            if hasattr(self.app, 'expand_all_folders'):
+                try:
+                    self.app.expand_all_folders()
+                except Exception:
+                    pass
+            if hasattr(self.app, 'finalize_button_order'):
+                try:
+                    self.app.finalize_button_order()
+                except Exception:
+                    pass
+            if hasattr(self.parent(), 'update_button_positions'):
+                try:
+                    self.parent().update_button_positions()
+                except Exception:
+                    pass
+            self._collapsed_for_drag = False
 
     def _draw_base_template(self) -> QPixmap:
         pix = QPixmap(self.icon_size, self.icon_size)

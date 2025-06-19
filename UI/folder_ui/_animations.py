@@ -164,7 +164,8 @@ class FolderAnimationMixin:
 
     def expand_all_folders(self):
         """恢复上一次 `collapse_all_folders` 保存的展开状态。"""
-        if not hasattr(self, 'buttons'): return
+        if not hasattr(self, 'buttons'):
+            return
 
         # Only proceed if a "collapse all" op was done and states were saved & not empty
         if not getattr(self, "all_folders_collapsed", False) or \
@@ -175,6 +176,7 @@ class FolderAnimationMixin:
             return
 
         any_folder_animated = False
+        needs_retry = False
         for btn_from_state, was_expanded in self.folder_expanded_states.items():
             # Check if button still exists in the current list of buttons on CoverContent
             if btn_from_state not in self.buttons:
@@ -205,6 +207,23 @@ class FolderAnimationMixin:
                     btn_from_state.folder_animation_group = anim
                     anim.start()
                     any_folder_animated = True
+                else:
+                    needs_retry = True
+
+        if needs_retry and not any_folder_animated:
+            # Collapse animations still running; try again shortly without clearing state
+            if not hasattr(self, '_expand_retry_timer') or self._expand_retry_timer is None:
+                self._expand_retry_timer = QTimer(self, singleShot=True)
+                self._expand_retry_timer.timeout.connect(self.expand_all_folders)
+            self._expand_retry_timer.start(150)
+            return
+
+        # If retry not needed, cleanup any existing timer and clear state
+        if hasattr(self, '_expand_retry_timer') and self._expand_retry_timer:
+            if self._expand_retry_timer.isActive():
+                self._expand_retry_timer.stop()
+            self._expand_retry_timer.deleteLater()
+            self._expand_retry_timer = None
 
         self.folder_expanded_states.clear()  # Clear states after attempting expansion
         self.all_folders_collapsed = False

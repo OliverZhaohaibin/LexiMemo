@@ -201,7 +201,7 @@ class DraggableButton(QPushButton):
             if callable(getattr(self.app, "collapse_all_folders", None)):
                 scroll_area = getattr(self.app, "scroll_area", None)
                 old_scroll  = scroll_area.verticalScrollBar().value() if scroll_area else None
-                self.app.collapse_all_folders()
+                self.app.collapse_all_folders(skip_buttons=[self])
 
                 def _recenter():
                     if scroll_area and old_scroll is not None:

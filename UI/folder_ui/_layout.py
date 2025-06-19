@@ -160,8 +160,21 @@ class FolderLayoutMixin:
 
         # 使用动画模块的 `_calculate_final_positions` 根据当前所有文件夹展
         # 开状态计算最终布局，从而避免按钮之间出现重叠。
+        dragging_buttons = []
+        for btn in self.buttons:
+            if getattr(btn, "is_dragging", False):
+                dragging_buttons.append(btn)
+            if getattr(btn, "is_folder", False):
+                for sub in btn.sub_buttons:
+                    if getattr(sub, "is_dragging", False):
+                        dragging_buttons.append(sub)
+        if hasattr(self, "new_book_button") and getattr(self.new_book_button, "is_dragging", False):
+            dragging_buttons.append(self.new_book_button)
+
         final_pos_map, new_book_target = self._calculate_final_positions(
-            None, False
+            None,
+            False,
+            dragging_buttons,
         )
 
         # ---------- 1) 移动所有按钮到计算后的目标位置 ----------
@@ -231,6 +244,11 @@ class FolderLayoutMixin:
                     break
 
         self.buttons = new_main_buttons_order
+
+        active_layout_anim = getattr(self, "_active_layout_anim", None)
+        if active_layout_anim and active_layout_anim.state() == QParallelAnimationGroup.Running:
+            # Defer visual updates until global layout animation finishes
+            return
 
         self.animate_button_positions(dragged_button)
 

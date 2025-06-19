@@ -7,8 +7,16 @@ from typing import Dict, List  # Import Dict and List
 from ._background import FolderBackground  # update_folder_background is called by update_button_positions
 
 
-def create_folder_toggle_animation(folder_button, target_positions: List[QPoint], button_width, button_height,
-                                   spacing):
+def create_folder_toggle_animation(
+    folder_button,
+    target_positions: List[QPoint],
+    button_width,
+    button_height,
+    spacing,
+    *,
+    connect_finished: bool = True,
+    follow_parent: bool = False,
+):
     """
     创建文件夹展开/关闭的动画
 
@@ -18,11 +26,13 @@ def create_folder_toggle_animation(folder_button, target_positions: List[QPoint]
         button_width: 按钮宽度
         button_height: 按钮高度
         spacing: 间距
+        connect_finished: 是否在动画结束后调用 ``_post_folder_animation``
 
     Returns:
         动画组
     """
     master_anim_group = QParallelAnimationGroup()
+    pos_anims = []
 
     # folder_button.is_expanded has been set to the *target* state before calling this
     is_expanding = folder_button.is_expanded
@@ -45,6 +55,7 @@ def create_folder_toggle_animation(folder_button, target_positions: List[QPoint]
         pos_anim.setEndValue(end_pos)
         pos_anim.setEasingCurve(QEasingCurve.OutBack if is_expanding else QEasingCurve.InBack)
         master_anim_group.addAnimation(pos_anim)
+        pos_anims.append(pos_anim)
 
         opacity_anim = QPropertyAnimation(sub_btn, b"windowOpacity")
         opacity_anim.setDuration(duration_base - 50 if duration_base > 50 else duration_base)
@@ -53,16 +64,44 @@ def create_folder_toggle_animation(folder_button, target_positions: List[QPoint]
         opacity_anim.setEasingCurve(QEasingCurve.InOutQuad)
         master_anim_group.addAnimation(opacity_anim)
 
-    # folder_button.app is CoverContent which has _post_folder_animation from FolderAnimationMixin
-    if hasattr(folder_button, 'app') and folder_button.app and hasattr(folder_button.app, '_post_folder_animation'):
-        master_anim_group.finished.connect(
-            lambda: folder_button.app._post_folder_animation(folder_button)
-        )
-    elif hasattr(folder_button, 'app') and folder_button.app and hasattr(folder_button.app, 'update_button_positions'):
-        # Fallback if _post_folder_animation is not directly on app (should not happen with current structure)
-        master_anim_group.finished.connect(
-            folder_button.app.update_button_positions
-        )
+    if follow_parent and folder_button:
+        def _sync_targets():
+            for pa in pos_anims:
+                pa.setEndValue(folder_button.pos())
+
+        old_timer = getattr(folder_button, "follow_timer", None)
+        if old_timer:
+            if old_timer.isActive():
+                old_timer.stop()
+            old_timer.deleteLater()
+            folder_button.follow_timer = None
+
+        follow_timer = QTimer(folder_button)
+        follow_timer.setInterval(30)
+        follow_timer.timeout.connect(_sync_targets)
+        follow_timer.start()
+        folder_button.follow_timer = follow_timer
+
+        def _stop_timer():
+            if follow_timer.isActive():
+                follow_timer.stop()
+            follow_timer.deleteLater()
+            if getattr(folder_button, "follow_timer", None) is follow_timer:
+                folder_button.follow_timer = None
+
+        master_anim_group.finished.connect(_stop_timer)
+
+    if connect_finished:
+        # folder_button.app is CoverContent which has _post_folder_animation from FolderAnimationMixin
+        if hasattr(folder_button, 'app') and folder_button.app and hasattr(folder_button.app, '_post_folder_animation'):
+            master_anim_group.finished.connect(
+                lambda: folder_button.app._post_folder_animation(folder_button)
+            )
+        elif hasattr(folder_button, 'app') and folder_button.app and hasattr(folder_button.app, 'update_button_positions'):
+            # Fallback if _post_folder_animation is not directly on app (should not happen with current structure)
+            master_anim_group.finished.connect(
+                folder_button.app.update_button_positions
+            )
 
     return master_anim_group
 
@@ -89,9 +128,14 @@ class FolderAnimationMixin:
         if not hasattr(folder_button, "is_folder") or not folder_button.is_folder:
             return
 
+        # Stop any global animation that might interfere
+        self._stop_active_layout_anim()
+
         current_anim_group = getattr(folder_button, "folder_animation_group", None)
         if current_anim_group and current_anim_group.state() == QParallelAnimationGroup.Running:
             return
+        # Clean up any leftover animation/timer
+        self._stop_folder_animation(folder_button)
 
         # Determine target state and set it on the button
         target_is_expanding = not folder_button.is_expanded
@@ -132,109 +176,316 @@ class FolderAnimationMixin:
         folder_button.folder_animation_group = master_animation_group
         master_animation_group.start()
 
-    def collapse_all_folders(self):
-        """批量折叠界面上 *所有* 已展开文件夹（并记录状态）。"""
-        if not hasattr(self, 'buttons'): return
+    def _stop_active_layout_anim(self):
+        """Stop and finalize any running layout animation group."""
+        anim = getattr(self, "_active_layout_anim", None)
+        if not anim:
+            return
 
-        self.folder_expanded_states: Dict = {}
-        self.all_folders_collapsed = True  # Mark that a "collapse all" operation was performed
+        if anim.state() != QParallelAnimationGroup.Stopped:
+            anim.stop()
 
-        any_folder_animated = False
-        for btn in self.buttons:  # self.buttons is from CoverContent
-            if hasattr(btn, 'is_folder') and btn.is_folder and \
-                    hasattr(btn, 'is_expanded') and btn.is_expanded:
+        # Finalize folder states that were animated by this group
+        finalized = False
+        if hasattr(self, "buttons"):
+            for btn in self.buttons:
+                btn_anim = getattr(btn, "folder_animation_group", None)
+                if not btn_anim:
+                    continue
+                if btn_anim is anim or btn_anim.parent() is anim:
+                    self._stop_folder_animation(btn, finalize=True)
+                    finalized = True
+        if finalized and hasattr(self, "update_button_positions"):
+            try:
+                self.update_button_positions()
+            except Exception:
+                pass
 
-                self.folder_expanded_states[btn] = True  # Record it was expanded
+        anim.deleteLater()
+        self._active_layout_anim = None
+        self._ensure_final_layout()
 
-                current_anim_group = getattr(btn, "folder_animation_group", None)
-                if not current_anim_group or current_anim_group.state() != QParallelAnimationGroup.Running:
-                    btn.is_expanded = False  # CRITICAL: Set state BEFORE creating animation
+    def _stop_folder_animation(self, folder_button, *, finalize: bool = False):
+        """Stop animations/timers tied to ``folder_button``.
 
-                    anim = create_folder_toggle_animation(
-                        btn, [], self.button_width, self.button_height, self.spacing
-                    )
-                    btn.folder_animation_group = anim
-                    anim.start()
-                    any_folder_animated = True
+        Parameters
+        ----------
+        folder_button : WordBookButton
+            The folder whose animations should be halted.
+        finalize : bool, optional
+            If ``True``, also apply :meth:`_post_folder_animation` to ensure
+            sub‑buttons and backgrounds reflect ``is_expanded`` state.
+        """
+        if not folder_button:
+            return
 
-        if not any_folder_animated and hasattr(self, 'update_button_positions'):
-            # If no folders were actually collapsed (e.g., all were already closed),
-            # still trigger a layout update to ensure consistency, especially if exiting edit mode.
-            QTimer.singleShot(0, self.update_button_positions)
+        anim = getattr(folder_button, "folder_animation_group", None)
+        if anim and anim.state() != QParallelAnimationGroup.Stopped:
+            anim.stop()
+        if anim:
+            anim.deleteLater()
+        folder_button.folder_animation_group = None
+
+        timer = getattr(folder_button, "follow_timer", None)
+        if timer:
+            if timer.isActive():
+                timer.stop()
+            timer.deleteLater()
+        folder_button.follow_timer = None
+
+        if finalize:
+            try:
+                self._post_folder_animation(folder_button)
+            except Exception:
+                pass
+
+    def _ensure_final_layout(self):
+        """Check if buttons are at their computed final positions and fix if not."""
+        if not hasattr(self, "buttons"):
+            return
+
+        dragging = []
+        for btn in self.buttons:
+            if getattr(btn, "is_dragging", False):
+                dragging.append(btn)
+            if getattr(btn, "is_folder", False):
+                for sub in btn.sub_buttons:
+                    if getattr(sub, "is_dragging", False):
+                        dragging.append(sub)
+        if hasattr(self, "new_book_button") and getattr(self.new_book_button, "is_dragging", False):
+            dragging.append(self.new_book_button)
+
+        final_map, new_book_target = self._calculate_final_positions(None, False, dragging)
+
+        correct = True
+        for b, pos in final_map.items():
+            if b.pos() != pos:
+                correct = False
+                break
+        if correct and hasattr(self, "new_book_button") and self.new_book_button.pos() != new_book_target:
+            correct = False
+
+        if not correct and hasattr(self, "update_button_positions"):
+            self.update_button_positions()
+
+    def collapse_all_folders(self, *, skip_buttons=None):
+        """批量折叠界面上 *所有* 已展开文件夹（并记录状态）。
+
+        Parameters
+        ----------
+        skip_buttons : Iterable[QWidget] or None
+            Buttons that should be ignored when computing final layout.
+            This is useful when starting a drag so the dragged button does not
+            get animated by the collapse operation.
+        """
+        if not hasattr(self, 'buttons'):
+            return
+
+        # Stop any ongoing global animation to avoid conflicting moves
+        self._stop_active_layout_anim()
+
+        # Cancel any pending expand retries from a previous quick drag
+        if hasattr(self, "_expand_retry_timer") and self._expand_retry_timer:
+            if self._expand_retry_timer.isActive():
+                self._expand_retry_timer.stop()
+            self._expand_retry_timer.deleteLater()
+            self._expand_retry_timer = None
+
+        # Stop and finalize any per-folder animations before computing layout
+        for btn in getattr(self, "buttons", []):
+            if getattr(btn, "is_folder", False):
+                finalize = not getattr(btn, "is_expanded", False)
+                self._stop_folder_animation(btn, finalize=finalize)
+
+        self.folder_expanded_states = {}
+        self.all_folders_collapsed = True
+
+        folders_to_collapse = [
+            b for b in self.buttons
+            if getattr(b, 'is_folder', False) and getattr(b, 'is_expanded', False)
+        ]
+
+        if not folders_to_collapse:
+            if hasattr(self, 'update_button_positions'):
+                QTimer.singleShot(0, self.update_button_positions)
+            return
+
+        for f in folders_to_collapse:
+            self.folder_expanded_states[f] = True
+            # Stop running animations/timers for a clean collapse
+            self._stop_folder_animation(f)
+            f.is_expanded = False
+
+        final_pos_map, new_book_target = self._calculate_final_positions(None, False, skip_buttons)
+
+        master_group = QParallelAnimationGroup(self)
+        for f in folders_to_collapse:
+            anim = create_folder_toggle_animation(
+                f,
+                [],
+                self.button_width,
+                self.button_height,
+                self.spacing,
+                connect_finished=False,
+                follow_parent=f in (skip_buttons or []),
+            )
+            f.folder_animation_group = anim
+            master_group.addAnimation(anim)
+
+        for btn, pos in final_pos_map.items():
+            if btn.pos() != pos:
+                master_group.addAnimation(
+                    create_button_position_animation(btn, pos, duration=450)
+                )
+
+        if hasattr(self, 'new_book_button') and self.new_book_button.pos() != new_book_target:
+            master_group.addAnimation(
+                create_button_position_animation(self.new_book_button, new_book_target, duration=450)
+            )
+
+        def _cleanup():
+            for f in folders_to_collapse:
+                if not f.is_expanded:
+                    for sub in f.sub_buttons:
+                        sub.hide()
+                        sub.setWindowOpacity(1.0)
+                    if hasattr(f, 'background_frame') and f.background_frame:
+                        f.background_frame.hide()
+                        if f.background_frame.graphicsEffect():
+                            f.background_frame.graphicsEffect().setOpacity(1.0)
+                else:
+                    for sub in f.sub_buttons:
+                        sub.setWindowOpacity(1.0)
+                    if hasattr(f, 'background_frame') and f.background_frame and f.background_frame.graphicsEffect():
+                        f.background_frame.graphicsEffect().setOpacity(1.0)
+                # Clear reference to finished animation
+                f.folder_animation_group = None
+            self.update_button_positions()
+            self._ensure_final_layout()
+            self._active_layout_anim = None
+        master_group.finished.connect(_cleanup)
+        self._active_layout_anim = master_group
+        master_group.start()
 
     def expand_all_folders(self):
         """恢复上一次 `collapse_all_folders` 保存的展开状态。"""
         if not hasattr(self, 'buttons'):
             return
 
-        # Only proceed if a "collapse all" op was done and states were saved & not empty
-        if not getattr(self, "all_folders_collapsed", False) or \
-                not hasattr(self, "folder_expanded_states") or \
-                not self.folder_expanded_states:
+        # Stop any ongoing layout animation first
+        self._stop_active_layout_anim()
+
+        if (
+            not getattr(self, "all_folders_collapsed", False)
+            or not hasattr(self, "folder_expanded_states")
+            or not self.folder_expanded_states
+        ):
             if hasattr(self, 'update_button_positions'):
-                QTimer.singleShot(0, self.update_button_positions)  # Ensure layout is current
+                QTimer.singleShot(0, self.update_button_positions)
             return
 
-        any_folder_animated = False
-        needs_retry = False
-        for btn_from_state, was_expanded in self.folder_expanded_states.items():
-            # Check if button still exists in the current list of buttons on CoverContent
-            if btn_from_state not in self.buttons:
-                continue
+        expand_targets = [
+            btn
+            for btn, was_expanded in self.folder_expanded_states.items()
+            if was_expanded and btn in self.buttons and not getattr(btn, "is_expanded", False)
+        ]
 
-            # Ensure we are targeting a folder that was marked as expanded and is currently not
-            if was_expanded and hasattr(btn_from_state, 'is_folder') and btn_from_state.is_folder and \
-                    hasattr(btn_from_state, 'is_expanded') and not btn_from_state.is_expanded:
+        # Halt running animations on all folders before expanding
+        for btn in getattr(self, "buttons", []):
+            if getattr(btn, "is_folder", False):
+                finalize = btn not in expand_targets
+                self._stop_folder_animation(btn, finalize=finalize)
 
-                current_anim_group = getattr(btn_from_state, "folder_animation_group", None)
-                if not current_anim_group or current_anim_group.state() != QParallelAnimationGroup.Running:
-                    btn_from_state.is_expanded = True  # Set target state to expanding
+        if not expand_targets:
+            self.folder_expanded_states.clear()
+            self.all_folders_collapsed = False
+            if hasattr(self, 'update_button_positions'):
+                QTimer.singleShot(0, self.update_button_positions)
+            return
 
-                    for sub in btn_from_state.sub_buttons:
-                        sub.show()
-                        sub.setWindowOpacity(0)
+        needs_retry = any(
+            getattr(btn, 'folder_animation_group', None)
+            and btn.folder_animation_group.state() == QParallelAnimationGroup.Running
+            for btn in expand_targets
+        )
 
-                    # Calculate target positions for sub-buttons for this specific folder's expansion
-                    final_pos_map, _ = self._calculate_final_positions(btn_from_state,
-                                                                       True)  # True for is_expanding_current_folder
-                    target_positions_for_subs = [final_pos_map[s] for s in btn_from_state.sub_buttons if
-                                                 s in final_pos_map]
-
-                    anim = create_folder_toggle_animation(
-                        btn_from_state, target_positions_for_subs,
-                        self.button_width, self.button_height, self.spacing
-                    )
-                    btn_from_state.folder_animation_group = anim
-                    anim.start()
-                    any_folder_animated = True
-                else:
-                    needs_retry = True
-
-        if needs_retry and not any_folder_animated:
-            # Collapse animations still running; try again shortly without clearing state
+        if needs_retry:
             if not hasattr(self, '_expand_retry_timer') or self._expand_retry_timer is None:
                 self._expand_retry_timer = QTimer(self, singleShot=True)
                 self._expand_retry_timer.timeout.connect(self.expand_all_folders)
             self._expand_retry_timer.start(150)
             return
 
-        # If retry not needed, cleanup any existing timer and clear state
         if hasattr(self, '_expand_retry_timer') and self._expand_retry_timer:
             if self._expand_retry_timer.isActive():
                 self._expand_retry_timer.stop()
             self._expand_retry_timer.deleteLater()
             self._expand_retry_timer = None
 
-        self.folder_expanded_states.clear()  # Clear states after attempting expansion
-        self.all_folders_collapsed = False
+        for btn in expand_targets:
+            # Stop any ongoing toggle animation/timer to avoid conflicts
+            self._stop_folder_animation(btn)
+            btn.is_expanded = True
+            for sub in btn.sub_buttons:
+                sub.show()
+                sub.setWindowOpacity(0)
 
-        # A final layout update after a delay to ensure all animations settle.
-        # Individual animations also call _post_folder_animation -> update_button_positions.
-        if hasattr(self, 'update_button_positions'):
-            # Delay slightly more than the longest potential animation (duration_base + N*duration_increment for sub_buttons)
-            # Max sub_buttons is 9. Longest collapse is 250 + 8*40 = 570. Longest expand 450 + 8*100 = 1250.
-            # A generic delay for safety.
-            QTimer.singleShot(600, self.update_button_positions)
+        final_pos_map, new_book_target = self._calculate_final_positions(None, False)
+
+        master_group = QParallelAnimationGroup(self)
+        for btn in expand_targets:
+            sub_targets = [final_pos_map[s] for s in btn.sub_buttons if s in final_pos_map]
+            anim = create_folder_toggle_animation(
+                btn,
+                sub_targets,
+                self.button_width,
+                self.button_height,
+                self.spacing,
+                connect_finished=False,
+            )
+            btn.folder_animation_group = anim
+            master_group.addAnimation(anim)
+
+        expanded_subs = [s for f in expand_targets for s in f.sub_buttons]
+        for b, pos in final_pos_map.items():
+            if b in expanded_subs:
+                continue
+            if b.pos() != pos:
+                master_group.addAnimation(
+                    create_button_position_animation(b, pos, duration=450)
+                )
+
+        if hasattr(self, 'new_book_button') and self.new_book_button.pos() != new_book_target:
+            master_group.addAnimation(
+                create_button_position_animation(self.new_book_button, new_book_target, duration=450)
+            )
+
+        def _cleanup():
+            for f in expand_targets:
+                if not f.is_expanded:
+                    for sub in f.sub_buttons:
+                        sub.hide()
+                        sub.setWindowOpacity(1.0)
+                    if hasattr(f, 'background_frame') and f.background_frame:
+                        f.background_frame.hide()
+                        if f.background_frame.graphicsEffect():
+                            f.background_frame.graphicsEffect().setOpacity(1.0)
+                else:
+                    for sub in f.sub_buttons:
+                        sub.setWindowOpacity(1.0)
+                    if hasattr(f, 'background_frame') and f.background_frame and f.background_frame.graphicsEffect():
+                        f.background_frame.graphicsEffect().setOpacity(1.0)
+                # Clear reference to finished animation
+                f.folder_animation_group = None
+            self.folder_expanded_states.clear()
+            self.all_folders_collapsed = False
+            self.update_button_positions()
+            self._ensure_final_layout()
+            self._active_layout_anim = None
+
+        master_group.finished.connect(_cleanup)
+        self._active_layout_anim = master_group
+        master_group.start()
 
     def _ensure_background_frames(self, folder_button):
         """Ensures the folder_button being toggled (and other already expanded ones)
@@ -265,7 +516,12 @@ class FolderAnimationMixin:
             # Don't show() here; let animation control visibility. If it's expanding, opacity starts at 0.
             # If it's collapsing, it's already visible.
 
-    def _calculate_final_positions(self, folder_button_being_toggled, is_expanding_current_folder):
+    def _calculate_final_positions(
+        self,
+        folder_button_being_toggled,
+        is_expanding_current_folder,
+        skip_buttons=None,
+    ):
         # self refers to CoverContent
         bw, bh, sp = self.button_width, self.button_height, self.spacing
         avail_w = self.scroll_content.width() or self.scroll_area.viewport().width()
@@ -279,8 +535,11 @@ class FolderAnimationMixin:
         buttons_per_row = max(1, (avail_w - sp) // (bw + sp))
         main_button_idx = 0
 
+        skip_set = set(skip_buttons) if skip_buttons else set()
+
         for btn in buttons_for_layout:
-            if getattr(btn, "is_dragging", False): continue  # Skip dragging button for calculation
+            if btn in skip_set or getattr(btn, "is_dragging", False):
+                continue  # Skip dragging/explicitly skipped button for calculation
 
             if main_button_idx > 0 and main_button_idx % buttons_per_row == 0:
                 y += bh + sp
@@ -305,7 +564,8 @@ class FolderAnimationMixin:
                             bw + fsp)))  # Adjusted for potentially tighter packing
 
                 for idx, sub_btn in enumerate(btn.sub_buttons):
-                    if getattr(sub_btn, "is_dragging", False): continue
+                    if sub_btn in skip_set or getattr(sub_btn, "is_dragging", False):
+                        continue
 
                     if idx > 0 and idx % sub_buttons_per_row == 0:
                         y += bh + fsp  # Move to next row for sub-buttons
@@ -324,7 +584,7 @@ class FolderAnimationMixin:
             main_button_idx += 1
 
         new_book_target = QPoint(0, 0)  # Default
-        if hasattr(self, 'new_book_button'):
+        if hasattr(self, 'new_book_button') and self.new_book_button not in skip_set:
             if main_button_idx > 0 and main_button_idx % buttons_per_row == 0:
                 y += bh + sp
                 x = sp
@@ -333,6 +593,8 @@ class FolderAnimationMixin:
                 y = sp + (getattr(self, "top_margin", 40) or 40)
 
             new_book_target = QPoint(x, y)
+        elif hasattr(self, 'new_book_button'):
+            new_book_target = self.new_book_button.pos()
 
         return final_pos, new_book_target
 

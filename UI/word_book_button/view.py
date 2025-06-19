@@ -82,6 +82,8 @@ class WordBookButtonView(QPushButton):
         self._edit_mode = False
         self._drag_offset: QPoint | None = None
         self._dragging = False
+        # Expose dragging state for layout/animation logic
+        self.is_dragging = False
         # Track if we collapsed folders when this button press began
         self._collapsed_for_drag = False
         self.rename_source = "edit"
@@ -142,11 +144,12 @@ class WordBookButtonView(QPushButton):
             if self._edit_mode:
                 self._drag_offset = ev.pos()
                 self._dragging = False
+                self.is_dragging = False
                 self.raise_()
-                # Collapse all folders for drag-reordering of *any* button
-                if hasattr(self.app, 'collapse_all_folders'):
+                # Only collapse folders when dragging main buttons
+                if not self.is_sub_button and hasattr(self.app, 'collapse_all_folders'):
                     try:
-                        self.app.collapse_all_folders()
+                        self.app.collapse_all_folders(skip_buttons=[self])
                         self._collapsed_for_drag = True
                     except Exception:
                         self._collapsed_for_drag = False
@@ -160,6 +163,7 @@ class WordBookButtonView(QPushButton):
             self._fade_dark()
             if self._edit_mode and self._dragging:
                 self._dragging = False
+                self.is_dragging = False
                 if hasattr(self, "app") and self.app:
                     if self.is_sub_button and self.parent_folder:
                         if not self.drag_out_threshold_exceeded:
@@ -198,6 +202,7 @@ class WordBookButtonView(QPushButton):
         if self._edit_mode and ev.buttons() & Qt.LeftButton and self._drag_offset is not None:
             if not self._dragging and (ev.pos() - self._drag_offset).manhattanLength() > 3:
                 self._dragging = True
+                self.is_dragging = True
             if self._dragging:
                 new_pos = self.mapToParent(ev.pos() - self._drag_offset)
                 self.move(new_pos)
@@ -302,6 +307,7 @@ class WordBookButtonView(QPushButton):
                     self.parent().update_button_positions()
                 except Exception:
                     pass
+            self.is_dragging = False
             self._collapsed_for_drag = False
 
     def _draw_base_template(self) -> QPixmap:

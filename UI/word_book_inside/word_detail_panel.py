@@ -8,19 +8,21 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt
 
+from domain.models import Word
+
 from UI.styles import PRIMARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE, TAG_LABEL_STYLE
 from UI.font import meaning_font, main_word_font, sentence_font, sentence_font_platte, list_word_font
 
 class WordDetailPanel(QWidget):
     """右侧只读详情视图。"""
 
-    edit_requested = Signal(dict)   # 当用户点击“编辑”
+    edit_requested = Signal(Word)   # 当用户点击“编辑”
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self._section_widgets: dict[str, QWidget] = {}
         self._build_ui()
-        self._current_word: dict | None = None
+        self._current_word: Word | None = None
 
     # ------------------------------------------------------------------
     def _build_ui(self):
@@ -50,10 +52,10 @@ class WordDetailPanel(QWidget):
         self._btn_edit = None
 
     # ------------------------------------------------------------------
-    def show_word(self, word: dict):
+    def show_word(self, word: Word):
         self._current_word = word
         self.placeholder.hide()
-        self.word_label.setText(str(word["单词"]))
+        self.word_label.setText(word.text)
 
         # 清空旧内容
         self._section_widgets.clear()
@@ -95,9 +97,9 @@ class WordDetailPanel(QWidget):
             self.scroll.ensureWidgetVisible(widget)
 
     # ------------------------------------------------------------------
-    def _build_meaning_example_section(self, w: dict):
+    def _build_meaning_example_section(self, w: Word):
         wid = QWidget(); lay = QVBoxLayout(wid)
-        meanings, examples = w.get("释义", []), w.get("例句", [])
+        meanings, examples = w.meanings, w.examples
         if len(examples) < len(meanings):
             examples += [""] * (len(meanings) - len(examples))
         grouped: OrderedDict[str, list[str]] = OrderedDict()
@@ -120,24 +122,24 @@ class WordDetailPanel(QWidget):
         self.tab_bar.addTab("释义 & 例句")
         self._section_widgets["释义 & 例句"] = wid
 
-    def _build_note_section(self, w: dict):
+    def _build_note_section(self, w: Word):
         wid = QWidget(); lay = QVBoxLayout(wid)
-        self._add_row(lay, "备注:", w.get("备注", "无备注"), multiline=True)
+        self._add_row(lay, "备注:", w.note or "无备注", multiline=True)
         self.scroll_layout.addWidget(wid)
         self.tab_bar.addTab("备注")
         self._section_widgets["备注"] = wid
 
-    def _build_tag_section(self, w: dict):
+    def _build_tag_section(self, w: Word):
         wid = QWidget(); lay = QVBoxLayout(wid)
-        tags = w.get("标签", [])
+        tags = w.tags
         txt = ", ".join(tags) if tags else "无标签"
         self._add_row(lay, "标签:", txt)
         self.scroll_layout.addWidget(wid)
         self.tab_bar.addTab("标签")
         self._section_widgets["标签"] = wid
 
-    def _build_related_section(self, w: dict):
-        rel = w.get("相关单词", [])
+    def _build_related_section(self, w: Word):
+        rel = w.related_words
         txt = ", ".join(rel) if rel else "无"
         wid = QWidget(); lay = QVBoxLayout(wid)
         self._add_row(lay, "关联单词:", txt)

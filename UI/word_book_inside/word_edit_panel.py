@@ -8,6 +8,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal
 
+from domain.models import Word
+
 from UI.styles import (
     GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, LINE_EDIT_STYLE, TEXT_EDIT_STYLE,
     SECONDARY_BUTTON_STYLE
@@ -17,15 +19,15 @@ from UI.element.MultiSelectComboBox import MultiSelectComboBox
 
 
 class WordEditPanel(QWidget):
-    """右侧：编辑模式。传入原 word dict 的副本进行编辑。"""
+    """右侧：编辑模式。传入原 word 对象的副本进行编辑。"""
 
-    edit_saved = Signal(dict)  # 发射保存后的完整 word dict
+    edit_saved = Signal(Word)  # 发射保存后的完整 word 对象
     cancelled = Signal()
 
-    def __init__(self, word: dict, book_name: str, book_color: str, parent: QWidget | None = None):
+    def __init__(self, word: Word, book_name: str, book_color: str, parent: QWidget | None = None):
         super().__init__(parent)
         self.book_name, self.book_color = book_name, book_color
-        self.original = word.copy()
+        self.original = word.to_dict()
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -141,4 +143,4 @@ class WordEditPanel(QWidget):
             "标签": self.tag_combo.selectedItems(),
             "时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         })
-        self.edit_saved.emit(updated)
+        self.edit_saved.emit(Word.from_dict(updated))

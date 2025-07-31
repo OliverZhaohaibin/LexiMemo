@@ -8,6 +8,7 @@ from PySide6.QtCore import Signal, Qt, QTimer
 
 from UI.element.MultiSelectComboBox import MultiSelectComboBox
 from services.wordbook_service import WordBookService as WS
+from domain.models import Word
 from UI.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, LINE_EDIT_STYLE
 from UI.font import list_word_font
 from utils import get_tags_path
@@ -17,7 +18,7 @@ class WordListPanel(QWidget):
     """左侧：搜索框 + 标签过滤 + 单词列表"""
 
     # --- 对外信号 --- #
-    word_selected = Signal(dict)   # 单词按钮被点击，发射完整单词 dict
+    word_selected = Signal(Word)   # 单词按钮被点击，发射完整单词对象
     add_word_click = Signal()      # "添加新单词" 按钮
     memory_click = Signal()        # "背单词" 按钮
 
@@ -26,7 +27,7 @@ class WordListPanel(QWidget):
         self.book_name = book_name
         self.book_color = book_color
         self._timer: QTimer | None = None
-        self.full_words: list[dict] = []
+        self.full_words: list[Word] = []
         self._build_ui()
         self._load_tags_to_filter()
         self.reload_words()
@@ -80,7 +81,7 @@ class WordListPanel(QWidget):
         self.full_words = WS.list_words(self.book_name, self.book_color)
         self._display_words(self.full_words)
 
-    def _display_words(self, words: list[dict]):
+    def _display_words(self, words: list[Word]):
         # 清空旧
         while self._list_layout.count():
             w = self._list_layout.takeAt(0).widget()
@@ -88,7 +89,7 @@ class WordListPanel(QWidget):
                 w.deleteLater()
 
         for wd in words:
-            btn = QPushButton(str(wd["单词"]))
+            btn = QPushButton(wd.text)
             btn.setFont(list_word_font)
             btn.clicked.connect(lambda _, d=wd: self.word_selected.emit(d))
             self._list_layout.addWidget(btn)
@@ -109,9 +110,9 @@ class WordListPanel(QWidget):
         kw = self.search_bar.text().strip().lower()
         tags = self.tag_filter_combo.selectedItems()
 
-        def ok(w: dict):
-            has_kw = kw in str(w["单词"]).lower()
-            has_tag = not tags or any(t in w.get("标签", []) for t in tags)
+        def ok(w: Word):
+            has_kw = kw in w.text.lower()
+            has_tag = not tags or any(t in w.tags for t in tags)
             return has_kw and has_tag
 
         self._display_words([w for w in self.full_words if ok(w)])

@@ -8,6 +8,8 @@ from PySide6.QtWidgets import (
 from UI.font import normal_font
 from PySide6.QtCore import Signal
 
+from domain.models import Word
+
 from datetime import datetime
 
 from UI.font import meaning_font, word_font
@@ -18,7 +20,7 @@ from UI.styles import GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, GRAY_INPUT_STYLE, GR
 
 
 class WordEntryUI(QWidget):
-    save_successful = Signal(dict)
+    save_successful = Signal(Word)
     def __init__(self, path):
         super(WordEntryUI, self).__init__()
         self.path = path  # 保存传入的路径
@@ -327,10 +329,11 @@ class WordEntryUI(QWidget):
                 "时间": timestamp,
             }
 
-            WS.save_word(self.book_name, self.book_color, data)
+            w_obj = Word.from_dict(data)
+            WS.save_word(self.book_name, self.book_color, w_obj)
 
             # ---------- 5. 成功操作 ----------
-            self.save_successful.emit(data)  # 发射信号，供父窗口刷新
+            self.save_successful.emit(w_obj)  # 发射信号，供父窗口刷新
             QMessageBox.information(self, "成功", "单词保存成功！", QMessageBox.Ok)
             self.close()
 

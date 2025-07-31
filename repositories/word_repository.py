@@ -4,7 +4,9 @@ Wrap db.py helpers so upper layers never import db directly.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import List
+
+from domain.models import Word
 
 from db import (
     load_words as _load_words,
@@ -18,19 +20,20 @@ class WordRepository:
 
     # -------- Query --------
     @staticmethod
-    def list_words(book_name: str, color: str) -> List[Dict[str, Any]]:
-        return _load_words(book_name, color)
+    def list_words(book_name: str, color: str) -> List[Word]:
+        data = _load_words(book_name, color)
+        return [Word.from_dict(d) for d in data]
 
     # -------- Save / Update --------
     @staticmethod
     def save_word(
         book_name: str,
         color: str,
-        data: Dict[str, Any],
+        word: Word,
         *,
         sync_to_total: bool = True,
     ) -> None:
-        _save_word(book_name, color, data, sync_to_total=sync_to_total)
+        _save_word(book_name, color, word.to_dict(), sync_to_total=sync_to_total)
 
     # -------- Delete --------
     @staticmethod

@@ -342,7 +342,7 @@ class CoverController(QObject):
             try:
                 words_in_book = WordBookService.list_words(btn.text(), btn.color_str)  # Use color_str
                 for w_data in words_in_book:
-                    word_raw = str(w_data.get("单词", "")).strip()
+                    word_raw = w_data.text.strip()
                     if not word_raw:
                         continue
                     word_lc = word_raw.lower()

@@ -9,6 +9,7 @@ from UI.word_book_inside.word_list_panel import WordListPanel
 from UI.word_book_inside.word_detail_panel import WordDetailPanel
 from UI.word_book_inside.word_edit_panel import WordEditPanel
 from services.wordbook_service import WordBookService as WS
+from domain.models import Word
 
 
 class WordBookWindow(QWidget):
@@ -42,13 +43,13 @@ class WordBookWindow(QWidget):
         self.split.setSizes([350, 850])
         lay.addWidget(self.split)
 
-        self._current_word: dict | None = None
+        self._current_word: Word | None = None
         self._dlg_add = None  # 保留对话框引用，避免被 GC
 
     # ------------------------------------------------------------------
     # 交互
     # ------------------------------------------------------------------
-    def _on_word_selected(self, word: dict):
+    def _on_word_selected(self, word: Word):
         self._current_word = word
         self.detail_panel.show_word(word)
 
@@ -67,13 +68,13 @@ class WordBookWindow(QWidget):
     # ------------------------------------------------------------------
     # 编辑
     # ------------------------------------------------------------------
-    def _enter_edit_mode(self, word: dict):
+    def _enter_edit_mode(self, word: Word):
         self._edit_panel = WordEditPanel(word, self.book_name, self.book_color)
         self._edit_panel.edit_saved.connect(self._save_edit)
         self._edit_panel.cancelled.connect(self._exit_edit_mode)
         self.split.replaceWidget(1, self._edit_panel)
 
-    def _save_edit(self, updated: dict):
+    def _save_edit(self, updated: Word):
         try:
             WS.save_word(self.book_name, self.book_color, updated)
             self.list_panel.reload_words()
@@ -92,7 +93,7 @@ class WordBookWindow(QWidget):
     # ------------------------------------------------------------------
     def _jump_to_word(self, word_name: str):
         for w in WS.list_words(self.book_name, self.book_color):
-            if str(w["单词"]).strip().lower() == str(word_name).strip().lower():
+            if w.text.strip().lower() == str(word_name).strip().lower():
                 self._on_word_selected(w)
                 break
 

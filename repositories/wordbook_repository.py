@@ -1,19 +1,10 @@
 # repositories/wordbook_repository.py
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
-
-# ---------- 纯数据：WordBook (原 domain.wordbook.WordBook) ----------
-@dataclass
-class WordBook:
-    name: str
-    color: str = "#ffffff"
-    path: Optional[Path] = None
-    is_folder: bool = False
-    sub_books: List["WordBook"] = field(default_factory=list)
+from domain.models import WordBook
 
 
 # ---------- 持久化层：示例 Repository ----------

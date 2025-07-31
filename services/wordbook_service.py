@@ -7,10 +7,12 @@ or additional business rules (if any) and offers a *stable* API.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import List
+
+from domain.models import Word, WordBook
 
 from repositories.word_repository import WordRepository
-from repositories.wordbook_repository import WordBook, WordBookRepository
+from repositories.wordbook_repository import WordBookRepository
 
 
 class WordBookService:
@@ -31,7 +33,7 @@ class WordBookService:
     # READ
     # ------------------------------------------------------------------
     @staticmethod
-    def list_words(book_name: str, book_color: str) -> List[Dict[str, Any]]:
+    def list_words(book_name: str, book_color: str) -> List[Word]:
         """Return all words from the specified book.
 
         Thin wrapper for :py:meth:`repositories.word_repository.WordRepository.list_words`.
@@ -48,7 +50,7 @@ class WordBookService:
     def save_word(
         book_name: str,
         book_color: str,
-        data: Dict[str, Any],
+        word: Word,
         *,
         sync_to_total: bool = True,
     ) -> None:
@@ -61,7 +63,7 @@ class WordBookService:
         WordRepository.save_word(
             book_name,
             book_color,
-            data,
+            word,
             sync_to_total=sync_to_total,
         )
 

@@ -191,6 +191,11 @@ class FolderLayoutMixin:
             max_bottom = max(p.y() for p in final_pos_map.values()) + bh + sp
         else:
             max_bottom = sp + bh
+
+        if hasattr(self, "new_book_button"):
+            nb_bottom = new_book_target.y() + bh + sp
+            max_bottom = max(max_bottom, nb_bottom)
+
         self.scroll_content.setMinimumSize(available_width, max_bottom)
 
         # ---------- 4) 更新文件夹背景框 ----------

@@ -153,9 +153,9 @@ class FolderLayoutMixin:
         if not hasattr(self, "buttons"):
             return  # 组件初始化异常才早退
 
-        available_width = (
-            self.scroll_content.width() or self.scroll_area.viewport().width()
-        )
+        # 确保使用最新的 viewport 宽度重新布局，避免窗口缩放后
+        # 仍沿用旧尺寸导致界面被裁切
+        available_width = self.scroll_area.viewport().width()
         bw, bh, sp = self.button_width, self.button_height, self.spacing
 
         # 使用动画模块的 `_calculate_final_positions` 根据当前所有文件夹展

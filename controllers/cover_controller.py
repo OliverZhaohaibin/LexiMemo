@@ -403,17 +403,27 @@ class CoverController(QObject):
                 b.stop_jitter()
 
         if entering:
-            # Expand folders and jitter sub-buttons
-            for btn in self._get_content_buttons():  # Iterate original list for folder operations
-                if btn.is_folder:
-                    if not btn.is_expanded:
-                        self.view.content.toggle_folder(btn)  # This will trigger animations
-                    # Jitter sub-buttons *after* the folder is set to be expanded
-                    # The toggle_folder method should ensure sub_buttons are visible for jitter if expanding
-                    # A slight delay might be needed if animations are long, but start_jitter itself is visual.
-                    # Let's assume toggle_folder makes them available for jittering quickly enough.
-                    QTimer.singleShot(50, lambda b_folder=btn: [sub.start_jitter() for sub in b_folder.sub_buttons if
-                                                                b_folder.is_expanded])
+            # --- Expand all folders simultaneously to avoid incorrect
+            # background geometry for the first item ---
+            content = self.view.content
+            if hasattr(content, "expand_all_folders"):
+                content.folder_expanded_states = {
+                    b: True for b in self._get_content_buttons() if b.is_folder
+                }
+                content.all_folders_collapsed = True
+                content.expand_all_folders()
+
+            # Jitter sub-buttons shortly after expansion
+            def _start_sub_jitter():
+                for btn in self._get_content_buttons():
+                    if btn.is_folder and btn.is_expanded:
+                        for sub in btn.sub_buttons:
+                            sub.start_jitter()
+
+            QTimer.singleShot(50, _start_sub_jitter)
+
+            # Ensure layout and background refresh after animations
+            QTimer.singleShot(600, self.view.content.update_button_positions)
 
         else:  # Exiting edit mode
             if hasattr(self.view.content, 'collapse_all_folders'):

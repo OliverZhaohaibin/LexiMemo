@@ -3,20 +3,27 @@ from __future__ import annotations
 from collections import OrderedDict
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QTextEdit, QPushButton,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QPushButton,
     QTabBar, QScrollArea, QFrame,
 )
 from PySide6.QtCore import Signal, Qt
 
 from domain.models import Word
 
-from UI.styles import PRIMARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE, TAG_LABEL_STYLE
+from UI.styles import (
+    PRIMARY_BUTTON_STYLE,
+    SECONDARY_BUTTON_STYLE,
+    TEXT_EDIT_STYLE,
+    LINE_EDIT_STYLE,
+    TAG_LABEL_STYLE,
+)
 from UI.font import meaning_font, main_word_font, sentence_font, sentence_font_platte, list_word_font
 
 class WordDetailPanel(QWidget):
     """右侧只读详情视图。"""
 
     edit_requested = Signal(Word)   # 当用户点击“编辑”
+    related_clicked = Signal(str)   # 当用户点击关联单词
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
@@ -139,10 +146,21 @@ class WordDetailPanel(QWidget):
         self._section_widgets["标签"] = wid
 
     def _build_related_section(self, w: Word):
-        rel = w.related_words
-        txt = ", ".join(rel) if rel else "无"
         wid = QWidget(); lay = QVBoxLayout(wid)
-        self._add_row(lay, "关联单词:", txt)
+        lay.addWidget(QLabel("关联单词:"))
+
+        if not w.related_words:
+            lay.addWidget(QLabel("无"))
+        else:
+            row = QHBoxLayout()
+            for rel_word in w.related_words:
+                btn = QPushButton(rel_word)
+                btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
+                btn.clicked.connect(lambda _, t=rel_word: self.related_clicked.emit(t))
+                row.addWidget(btn)
+            row.addStretch(1)
+            lay.addLayout(row)
+
         self.scroll_layout.addWidget(wid)
         self.tab_bar.addTab("相关")
         self._section_widgets["相关"] = wid

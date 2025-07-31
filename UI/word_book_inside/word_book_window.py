@@ -39,6 +39,7 @@ class WordBookWindow(QWidget):
 
         self.detail_panel = WordDetailPanel()
         self.detail_panel.edit_requested.connect(self._enter_edit_mode)
+        self.detail_panel.related_clicked.connect(self._jump_to_word)
         self.split.addWidget(self.detail_panel)
         self.split.setSizes([350, 850])
         lay.addWidget(self.split)

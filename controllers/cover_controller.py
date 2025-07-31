@@ -64,11 +64,15 @@ class CoverController(QObject):
         nb = self.view.content.new_book_button
         # The 'clicked' signal for the main "new_book_button" is special and leads to _create_wordbook
         # Other buttons' 'openRequested' is for opening existing wordbooks.
-        try:
-            nb.clicked.disconnect()  # Standard QPushButton signal
-        except (RuntimeError, TypeError):
-            pass
-        nb.clicked.connect(self._create_wordbook)
+        # Avoid Qt runtime warnings by tracking existing connections
+        old_clicked = getattr(nb, "_clicked_handler", None)
+        if old_clicked:
+            try:
+                nb.clicked.disconnect(old_clicked)
+            except (RuntimeError, TypeError):
+                pass
+        nb._clicked_handler = self._create_wordbook
+        nb.clicked.connect(nb._clicked_handler)
         self._wire_button_signals(nb)  # Wire other common signals
 
         current_buttons_in_content = self.view.content.buttons  # Get the list populated by build_buttons
@@ -101,11 +105,14 @@ class CoverController(QObject):
 
         # ViewModel style connections for rename/delete actions
         if hasattr(btn, 'renameRequested'):
-            try:
-                btn.renameRequested.disconnect(self._handle_button_rename)
-            except (TypeError, RuntimeError):
-                pass
-            btn.renameRequested.connect(self._handle_button_rename)
+            old = getattr(btn, "_rename_handler", None)
+            if old:
+                try:
+                    btn.renameRequested.disconnect(old)
+                except (TypeError, RuntimeError):
+                    pass
+            btn._rename_handler = self._handle_button_rename
+            btn.renameRequested.connect(btn._rename_handler)
 
         if hasattr(btn, 'deleteRequested'):
             handler = getattr(btn, "_del_handler", None)
@@ -120,19 +127,26 @@ class CoverController(QObject):
 
         # For opening regular wordbooks (not folders, not the new_book_button)
         if hasattr(btn, 'openRequested') and not btn.is_folder and not getattr(btn, 'is_new_button', False):
-            try:
-                btn.openRequested.disconnect()
-            except (TypeError, RuntimeError):
-                pass
-            btn.openRequested.connect(lambda p=btn.path: self._open_wordbook(p) if p else None)
+            old_open = getattr(btn, "_open_handler", None)
+            if old_open:
+                try:
+                    btn.openRequested.disconnect(old_open)
+                except (TypeError, RuntimeError):
+                    pass
+            handler = lambda p=btn.path: self._open_wordbook(p) if p else None
+            btn._open_handler = handler
+            btn.openRequested.connect(handler)
 
         # For saving layout after name change via inline edit
         if hasattr(btn, 'nameChangedNeedsLayoutSave'):
-            try:
-                btn.nameChangedNeedsLayoutSave.disconnect(self.save_current_layout)
-            except (TypeError, RuntimeError):
-                pass
-            btn.nameChangedNeedsLayoutSave.connect(self.save_current_layout)
+            old = getattr(btn, "_layout_save_handler", None)
+            if old:
+                try:
+                    btn.nameChangedNeedsLayoutSave.disconnect(old)
+                except (TypeError, RuntimeError):
+                    pass
+            btn._layout_save_handler = self.save_current_layout
+            btn.nameChangedNeedsLayoutSave.connect(btn._layout_save_handler)
 
     def _handle_button_rename(self, new_name: str):
         # This slot receives new_name from button's renameRequested signal
@@ -171,12 +185,15 @@ class CoverController(QObject):
             # Reconnect openRequested signal if path changed for a wordbook
             if not button_renamed.is_folder and not getattr(button_renamed, 'is_new_button', False) and hasattr(
                     self.view.content, "show_word_book") and button_renamed.path:
-                try:
-                    button_renamed.openRequested.disconnect()
-                except (RuntimeError, TypeError):
-                    pass
-                button_renamed.openRequested.connect(
-                    lambda p=button_renamed.path: self.view.content.show_word_book(p) if p else None)
+                old_open = getattr(button_renamed, "_open_handler", None)
+                if old_open:
+                    try:
+                        button_renamed.openRequested.disconnect(old_open)
+                    except (RuntimeError, TypeError):
+                        pass
+                new_open = lambda p=button_renamed.path: self.view.content.show_word_book(p) if p else None
+                button_renamed._open_handler = new_open
+                button_renamed.openRequested.connect(new_open)
 
             self.view.content.update_button_positions()  # Update visual layout
             self.save_current_layout()  # Persist change
@@ -192,14 +209,16 @@ class CoverController(QObject):
             return
 
     def _wire_context_menu(self, btn: WordBookButton) -> None:
-        try:
-            btn.customContextMenuRequested.disconnect()
-        except (RuntimeError, TypeError):
-            pass
+        old_ctx = getattr(btn, "_ctx_handler", None)
+        if old_ctx:
+            try:
+                btn.customContextMenuRequested.disconnect(old_ctx)
+            except (RuntimeError, TypeError):
+                pass
+        handler = lambda pos, b=btn: self._show_button_context_menu(pos, b)
+        btn._ctx_handler = handler
         btn.setContextMenuPolicy(Qt.CustomContextMenu)
-        btn.customContextMenuRequested.connect(
-            lambda pos, b=btn: self._show_button_context_menu(pos, b)
-        )
+        btn.customContextMenuRequested.connect(handler)
 
     def _show_button_context_menu(self, pos, button: WordBookButton):
         # Check if it's the specific new_book_button instance from CoverContent

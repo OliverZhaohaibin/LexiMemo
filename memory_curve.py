@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 )
 from UI.font import meaning_font, main_word_font, list_word_font, sentence_font, normal_font
 from UI.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE
-from db_memory import load_memory_data, save_memory_data, get_review_words, update_word_memory_status
+from services.memory_service import MemoryService
 
 # 艾宾浩斯遗忘曲线复习间隔（单位：天）
 MEMORY_INTERVALS = [0, 1, 2, 4, 7, 15, 30]
@@ -129,8 +129,10 @@ class MemoryCurveApp(QWidget):
     def load_memory_data(self):
         """加载记忆数据"""
         try:
-            # 使用SQLite数据库加载记忆数据
-            self.memory_data = load_memory_data(self.book_name, self.book_color)
+            # 通过服务层加载记忆数据
+            self.memory_data = MemoryService.load_memory_df(
+                self.book_name, self.book_color
+            )
             
             if self.memory_data.empty:
                 QMessageBox.warning(self, "提示", "记忆数据为空，将创建新的记忆数据。")
@@ -142,16 +144,20 @@ class MemoryCurveApp(QWidget):
     def save_memory_data(self):
         """保存记忆数据"""
         try:
-            # 使用SQLite数据库保存记忆数据
-            save_memory_data(self.book_name, self.book_color, self.memory_data)
+            # 通过服务层保存记忆数据
+            MemoryService.save_memory_df(
+                self.book_name, self.book_color, self.memory_data
+            )
         except Exception as e:
             QMessageBox.warning(self, "错误", f"保存记忆数据失败: {str(e)}")
     
     def load_review_words(self):
         """加载需要复习的单词"""
         try:
-            # 使用SQLite数据库获取今天需要复习的单词
-            self.review_words = get_review_words(self.book_name, self.book_color)
+            # 通过服务层获取今天需要复习的单词
+            self.review_words = MemoryService.get_review_words(
+                self.book_name, self.book_color
+            )
             
             if not self.review_words:
                 QMessageBox.information(self, "提示", "今天没有需要复习的单词!")
@@ -273,8 +279,10 @@ class MemoryCurveApp(QWidget):
                 self.result_label.setStyleSheet("color: green;")
                 self.correct_count += 1
                 
-                # 使用SQLite数据库更新单词记忆状态
-                update_word_memory_status(self.book_name, self.book_color, current_word["单词"], True)
+                # 更新单词记忆状态
+                MemoryService.record_answer(
+                    self.book_name, self.book_color, current_word["单词"], True
+                )
                 
                 # 更新内存中的数据以保持UI一致性
                 word_idx = self.memory_data[self.memory_data["单词"] == current_word["单词"]].index[0]
@@ -289,8 +297,10 @@ class MemoryCurveApp(QWidget):
                 self.result_label.setText(f"✗ 错误! 正确答案是: {current_word['单词']}")
                 self.result_label.setStyleSheet("color: red;")
                 
-                # 使用SQLite数据库更新单词记忆状态
-                update_word_memory_status(self.book_name, self.book_color, current_word["单词"], False)
+                # 更新单词记忆状态
+                MemoryService.record_answer(
+                    self.book_name, self.book_color, current_word["单词"], False
+                )
                 
                 # 更新内存中的数据以保持UI一致性
                 word_idx = self.memory_data[self.memory_data["单词"] == current_word["单词"]].index[0]
@@ -341,8 +351,10 @@ class MemoryCurveApp(QWidget):
             self.example_area.setText(examples_text)
             self.example_area.setVisible(True)
         
-        # 使用SQLite数据库更新单词记忆状态 - 显示答案视为错误
-        update_word_memory_status(self.book_name, self.book_color, current_word["单词"], False)
+        # 更新单词记忆状态 - 显示答案视为错误
+        MemoryService.record_answer(
+            self.book_name, self.book_color, current_word["单词"], False
+        )
         
         # 更新内存中的数据以保持UI一致性
         word_idx = self.memory_data[self.memory_data["单词"] == current_word["单词"]].index[0]

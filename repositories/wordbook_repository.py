@@ -45,9 +45,55 @@ class WordBookRepository:
         book.path = Path(new_path)
         return book
 
-    def delete(self, book: WordBook) -> None: ...
-    def save(self, book: WordBook) -> None: ...
-    def load_all(self) -> List[WordBook]: ...
+    def delete(self, book: WordBook) -> None:
+        """Delete the word-book folder from disk."""
+        import os, shutil, sys
+
+        base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        books_dir = os.path.join(base_dir, "books")
+        folder = f"books_{book.name}_{book.color}"
+        path = os.path.join(books_dir, folder)
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+
+    def save(self, book: WordBook) -> None:
+        """Ensure the word-book folder and database exist."""
+        import os, sys
+
+        base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        books_dir = os.path.join(base_dir, "books")
+        os.makedirs(books_dir, exist_ok=True)
+
+        folder = f"books_{book.name}_{book.color}"
+        path = os.path.join(books_dir, folder)
+        os.makedirs(path, exist_ok=True)
+
+        from db import init_db
+
+        init_db(os.path.join(path, "wordbook.db"))
+        book.path = Path(path)
+
+    def load_all(self) -> List[WordBook]:
+        """Scan the books directory and return discovered word books."""
+        import os, sys
+
+        base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        books_dir = os.path.join(base_dir, "books")
+        os.makedirs(books_dir, exist_ok=True)
+
+        results: List[WordBook] = []
+        for d in os.listdir(books_dir):
+            p = os.path.join(books_dir, d)
+            if not (d.startswith("books_") and os.path.isdir(p)):
+                continue
+            try:
+                _, nm, cl = d.split("_", 2)
+            except ValueError:
+                continue
+            results.append(WordBook(name=nm, color=cl, path=Path(p)))
+
+        results.sort(key=lambda b: b.name)
+        return results
 
 
 __all__ = ["WordBook", "WordBookRepository"]

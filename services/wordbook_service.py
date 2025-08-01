@@ -82,3 +82,16 @@ class WordBookService:
         """Rename a word book on disk and return the updated domain object."""
         updated = self._repo.rename(book, new_name)
         return updated
+
+    # ------------------------------------------------------------------
+    # WORD BOOK CREATE / DELETE
+    # ------------------------------------------------------------------
+    def create_wordbook(self, name: str, color: str) -> WordBook:
+        """Create a new word book on disk and return the domain object."""
+        book = WordBook(name=name, color=color)
+        self._repo.save(book)
+        return book
+
+    def delete_wordbook(self, book: WordBook) -> None:
+        """Delete the specified word book from disk."""
+        self._repo.delete(book)

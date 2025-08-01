@@ -2,7 +2,7 @@
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QComboBox
 from PySide6.QtCore import Qt
-from db import get_all_tags
+from services.tag_service import TagService
 
 
 class MultiSelectComboBox(QComboBox):
@@ -42,7 +42,7 @@ class MultiSelectComboBox(QComboBox):
         self.add_all_tags_item()
 
     def allItems(self):
-        return get_all_tags(self.book_name, self.book_color)
+        return TagService.list_tags(self.book_name, self.book_color)
 
     def handle_item_changed(self, item):
         if self.all_tags_item_changed:

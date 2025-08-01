@@ -1,7 +1,6 @@
 # controllers/cover_controller.py
 from __future__ import annotations
 import os
-import sys
 from PySide6.QtCore import QObject, QEvent, Slot, Qt, QUrl, QTimer
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
@@ -15,8 +14,6 @@ from services.wordbook_service import WordBookService
 from repositories.wordbook_repository import WordBook
 from pathlib import Path
 from UI.word_book_inside.word_book_window import WordBookWindow
-from db import delete_word as db_delete_word_directly, init_db as db_init_db
-import shutil
 
 
 class CoverController(QObject):
@@ -273,17 +270,21 @@ class CoverController(QObject):
             if button_to_delete in parent.sub_buttons:
                 parent.sub_buttons.remove(button_to_delete)
 
-            # Delete associated data and folder
+            # Delete associated data and folder via service
             try:
                 if button_to_delete.path and os.path.isdir(button_to_delete.path):
-                    # First, delete DB entries related to this specific book path
-                    # This requires knowing book_name and color from the sub-button
-                    book_name_to_del = button_to_delete.text()
-                    color_to_del = button_to_delete.color_str  # Use color_str
-                    db_delete_word_directly(book_name_to_del, color_to_del, "%")  # Deletes all words from its DB
-                    shutil.rmtree(button_to_delete.path)  # Then remove folder
+                    book = WordBook(
+                        name=button_to_delete.text(),
+                        color=button_to_delete.color_str,
+                        path=Path(button_to_delete.path),
+                    )
+                    self.wb_service.delete_wordbook(book)
             except Exception as e:
-                QMessageBox.warning(self.view, "删除子项文件失败", f"删除 '{button_to_delete.text()}' 的文件失败: {e}")
+                QMessageBox.warning(
+                    self.view,
+                    "删除子项文件失败",
+                    f"删除 '{button_to_delete.text()}' 的文件失败: {e}",
+                )
 
             button_to_delete.hide()
             button_to_delete.deleteLater()
@@ -300,20 +301,35 @@ class CoverController(QObject):
                 for sub_btn in button_to_delete.sub_buttons:
                     try:
                         if sub_btn.path and os.path.isdir(sub_btn.path):
-                            db_delete_word_directly(sub_btn.text(), sub_btn.color_str, "%")
-                            shutil.rmtree(sub_btn.path)
+                            book = WordBook(
+                                name=sub_btn.text(),
+                                color=sub_btn.color_str,
+                                path=Path(sub_btn.path),
+                            )
+                            self.wb_service.delete_wordbook(book)
                     except Exception as e:
-                        QMessageBox.warning(self.view, "删除子项文件失败",
-                                            f"删除文件夹内 '{sub_btn.text()}' 的文件失败: {e}")
+                        QMessageBox.warning(
+                            self.view,
+                            "删除子项文件失败",
+                            f"删除文件夹内 '{sub_btn.text()}' 的文件失败: {e}",
+                        )
                     sub_btn.hide()
                     sub_btn.deleteLater()
             else:  # Single wordbook (not a folder)
                 try:
                     if button_to_delete.path and os.path.isdir(button_to_delete.path):
-                        db_delete_word_directly(button_to_delete.text(), button_to_delete.color_str, "%")
-                        shutil.rmtree(button_to_delete.path)
+                        book = WordBook(
+                            name=button_to_delete.text(),
+                            color=button_to_delete.color_str,
+                            path=Path(button_to_delete.path),
+                        )
+                        self.wb_service.delete_wordbook(book)
                 except Exception as e:
-                    QMessageBox.warning(self.view, "删除文件失败", f"删除 '{button_to_delete.text()}' 的文件失败: {e}")
+                    QMessageBox.warning(
+                        self.view,
+                        "删除文件失败",
+                        f"删除 '{button_to_delete.text()}' 的文件失败: {e}",
+                    )
 
             if hasattr(button_to_delete, 'background_frame') and button_to_delete.background_frame:
                 button_to_delete.background_frame.deleteLater()
@@ -462,19 +478,19 @@ class CoverController(QObject):
     def _create_wordbook(self) -> None:
         success, book_name, book_color = self.fs.show_new_wordbook_dialog()
         if success and book_name and book_color:
-            base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-            books_dir = os.path.join(base_dir, "books")
-            new_book_folder_name = f"books_{book_name}_{book_color}"
-            new_book_path = os.path.join(books_dir, new_book_folder_name)
-
-            if os.path.exists(new_book_path):
-                QMessageBox.warning(self.view, "创建失败", f"名为 '{book_name}' 的单词本已存在。")
-                return
+            # Delegate creation to the service layer so UI does not touch db.py
             try:
-                os.makedirs(new_book_path, exist_ok=True)
-                db_init_db(os.path.join(new_book_path, "wordbook.db"))
+                # WordBookService will ensure the folder and DB exist
+                self.wb_service.create_wordbook(book_name, book_color)
+            except FileExistsError:
+                QMessageBox.warning(
+                    self.view,
+                    "创建失败",
+                    f"名为 '{book_name}' 的单词本已存在。",
+                )
+                return
             except Exception as e:
-                QMessageBox.warning(self.view, "创建失败", f"创建单词本目录或数据库失败: {e}")
+                QMessageBox.warning(self.view, "创建失败", f"创建单词本失败: {e}")
                 return
 
             self._load_buttons_and_layout()

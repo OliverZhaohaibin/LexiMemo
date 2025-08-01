@@ -485,9 +485,8 @@ class WordBookButtonView(QPushButton):
         if new_path.exists():
             raise FileExistsError(f"目标文件夹 '{new_folder}' 已存在。")
         if not old_path.exists():
-            new_path.mkdir(parents=True, exist_ok=True)
-            from db import init_db as db_init_db
-            db_init_db(str(new_path / "wordbook.db"))
+            from services.wordbook_service import WordBookService
+            WordBookService.get_instance().create_wordbook(new_name, self.color)
             return str(new_path)
         os.rename(old_path, new_path)
         return str(new_path)

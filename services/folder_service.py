@@ -29,9 +29,8 @@ class FolderService:
         main_folder = f"books_{main_name}_{main_color}"
         main_path = os.path.join(books_dir, main_folder)
         if not os.path.exists(main_path):
-            os.makedirs(main_path, exist_ok=True)
-            from db import init_db as _init_db
-            _init_db(os.path.join(main_path, "wordbook.db"))
+            from services.wordbook_service import WordBookService
+            WordBookService.get_instance().create_wordbook(main_name, main_color)
 
         # -- 枚举磁盘目录，整理元数据 ------------------------------------
         metas: list[Dict[str, str]] = []

@@ -108,11 +108,30 @@ class WordBookButtonView(QPushButton):
         self.delete_btn.clicked.connect(self.deleteRequested)
         self._update_delete_btn()
 
+        # Ensure jitter timer cleans up if this widget is destroyed
+        self.destroyed.connect(self._handle_destroyed)
+
     # ===================== 抖动 ===================== #
     @classmethod
     def _on_shared_jitter_timeout(cls) -> None:
         for btn in list(cls._jittering_buttons):
-            btn._advance_jitter()
+            try:
+                btn._advance_jitter()
+            except RuntimeError:
+                cls._jittering_buttons.discard(btn)
+        if (cls._shared_jitter_timer and
+                not cls._jittering_buttons):
+            cls._shared_jitter_timer.stop()
+            cls._shared_jitter_timer.deleteLater()
+            cls._shared_jitter_timer = None
+
+    def _handle_destroyed(self) -> None:
+        WordBookButtonView._jittering_buttons.discard(self)
+        if (WordBookButtonView._shared_jitter_timer and
+                not WordBookButtonView._jittering_buttons):
+            WordBookButtonView._shared_jitter_timer.stop()
+            WordBookButtonView._shared_jitter_timer.deleteLater()
+            WordBookButtonView._shared_jitter_timer = None
 
     def _advance_jitter(self) -> None:
         self._jitter_phase += self._jitter_step
@@ -231,8 +250,13 @@ class WordBookButtonView(QPushButton):
                 if hasattr(self, "app") and self.app:
                     if self.is_sub_button and self.parent_folder:
                         reorder_rect = calculate_reorder_area(
-                            self.parent_folder, self.app.button_width, self.app.button_height,
-                            self.app.spacing, self.app.scroll_content.width(), getattr(self.app, 'folder_extra_width', 0)
+                            self.parent_folder,
+                            self.app.button_width,
+                            self.app.button_height,
+                            self.app.spacing,
+                            self.app.scroll_content.width(),
+                            getattr(self.app, 'folder_extra_width', 0),
+                            dragging_btn=self,
                         )
                         center = self.mapTo(self.app, self.rect().center())
                         if reorder_rect.contains(center):

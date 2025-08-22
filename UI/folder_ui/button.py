@@ -249,9 +249,10 @@ class DraggableButton(QPushButton):
             reorder_area_height = (rows * (self.app.button_height + folder_spacing)) + folder_spacing * 1.01
             reorder_area = QRect(reorder_area_left, reorder_area_top, reorder_area_width, reorder_area_height)
 
-            # 判断按钮是否在重排序区域内
-            button_rect = QRect(self.pos(), self.size())
-            if reorder_area.contains(button_rect.center()):
+            # 判断鼠标是否仍在文件夹的重排序区域内
+            cursor_global = event.globalPosition().toPoint()
+            cursor_pos = self.parent_widget.mapFromGlobal(cursor_global)
+            if reorder_area.contains(cursor_pos):
                 # 显示蓝色框表示文件夹内重排序区域
                 self.app.show_blue_reorder_frame(self.parent_folder)
                 self.app.hide_red_removal_frame()

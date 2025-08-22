@@ -116,12 +116,26 @@ def calculate_reorder_area(
         button_height: int,
         spacing: int,
         central_widget_width: int,
-        folder_extra_width: int
+        folder_extra_width: int,
+        dragging_btn: 'WordBookButton | None' = None,
 ) -> QRect:
+    """计算文件夹内重排序区域.
+
+    Parameters
+    ----------
+    folder_button:
+        目标文件夹按钮。
+    button_width, button_height, spacing, central_widget_width, folder_extra_width:
+        与布局相关的常规参数。
+    dragging_btn:
+        当前正在拖拽的子按钮。若提供，将在计算边界时忽略它，
+        避免重排序区域随拖拽按钮移动而“跟着走”。
     """
-    计算文件夹内重排序区域.
-    """
-    if not folder_button.sub_buttons:
+
+    # 过滤掉正在拖拽的按钮，确保边界静态
+    sub_buttons = [b for b in folder_button.sub_buttons if b is not dragging_btn]
+
+    if not sub_buttons:
         left = 0
         top = folder_button.y() + button_height + spacing
         width = central_widget_width
@@ -130,8 +144,8 @@ def calculate_reorder_area(
 
     folder_internal_spacing = spacing * 1.5
 
-    min_y_sub = min(btn.y() for btn in folder_button.sub_buttons)
-    max_y_sub = max(btn.y() + button_height for btn in folder_button.sub_buttons)
+    min_y_sub = min(btn.y() for btn in sub_buttons)
+    max_y_sub = max(btn.y() + button_height for btn in sub_buttons)
 
     left = 0
     top = min_y_sub - folder_internal_spacing / 2

@@ -64,9 +64,14 @@ class WordEditPanel(QWidget):
 
         # 按钮
         btn_row = QHBoxLayout()
-        btn_save = QPushButton("保存"); btn_save.setStyleSheet(SECONDARY_BUTTON_STYLE); btn_save.clicked.connect(self._on_save)
-        btn_cancel = QPushButton("取消"); btn_cancel.setStyleSheet(RED_BUTTON_STYLE); btn_cancel.clicked.connect(lambda: self.cancelled.emit())
-        btn_row.addWidget(btn_save); btn_row.addWidget(btn_cancel)
+        btn_save = QPushButton("保存")
+        btn_save.setStyleSheet(SECONDARY_BUTTON_STYLE)
+        btn_save.clicked.connect(self._on_save)
+        btn_cancel = QPushButton("取消")
+        btn_cancel.setStyleSheet(RED_BUTTON_STYLE)
+        btn_cancel.clicked.connect(self.cancelled.emit)
+        btn_row.addWidget(btn_save)
+        btn_row.addWidget(btn_cancel)
         self.layout.addLayout(btn_row)
 
     # ------------------------------------------------------------------

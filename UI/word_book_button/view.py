@@ -1,5 +1,5 @@
 from __future__ import annotations
-import os, sys
+import os, sys, math
 from pathlib import Path
 
 from PySide6.QtCore import (
@@ -23,6 +23,9 @@ _DEFAULT_ICON_SIZE = 110                      # px
 # ============================================================
 class WordBookButtonView(QPushButton):
     """保持旧视觉/交互（含点击暗化 + 抖动）的新按钮 View。"""
+
+    _shared_jitter_timer: QTimer | None = None
+    _jittering_buttons: set['WordBookButtonView'] = set()
 
     # ============ 向外暴露的信号（旧逻辑仍接收） ============ #
     renameRequested = Signal(str)
@@ -77,7 +80,11 @@ class WordBookButtonView(QPushButton):
         self._long_press_timer.timeout.connect(self._on_long_press)
 
         # —— 抖动 / 拖动状态 —— #
-        self._jitter_anim: QPropertyAnimation | None = None
+        # 通过单一 QTimer 驱动所有按钮抖动，避免按钮数量多时创建大量
+        # 定时器导致的卡顿。
+        self._jitter_phase: float = 0.0
+        self._jitter_step: float = 0.5  # ≈200ms 周期
+        self._jitter_amplitude: float = 2.0
         self._rotation: float = 0.0
         self._edit_mode = False
         self._drag_offset: QPoint | None = None
@@ -102,26 +109,41 @@ class WordBookButtonView(QPushButton):
         self._update_delete_btn()
 
     # ===================== 抖动 ===================== #
+    @classmethod
+    def _on_shared_jitter_timeout(cls) -> None:
+        for btn in list(cls._jittering_buttons):
+            btn._advance_jitter()
+
+    def _advance_jitter(self) -> None:
+        self._jitter_phase += self._jitter_step
+        if self._jitter_phase >= 2 * math.pi:
+            self._jitter_phase -= 2 * math.pi
+        self.rotation = math.sin(self._jitter_phase) * self._jitter_amplitude
+
     def start_jitter(self) -> None:
-        if self._jitter_anim:
+        """启动轻量级抖动动画。"""
+        if self in WordBookButtonView._jittering_buttons:
             return
         self._edit_mode = True
-        self._jitter_anim = QPropertyAnimation(self, b"rotation")
-        self._jitter_anim.setDuration(200)
-        self._jitter_anim.setLoopCount(-1)
-        self._jitter_anim.setKeyValueAt(0, 0)
-        self._jitter_anim.setKeyValueAt(0.25, -2.0)
-        self._jitter_anim.setKeyValueAt(0.5, 0)
-        self._jitter_anim.setKeyValueAt(0.75, 2.0)
-        self._jitter_anim.setKeyValueAt(1, 0)
-        self._jitter_anim.start()
+        self._jitter_phase = 0.0
+        WordBookButtonView._jittering_buttons.add(self)
+        if WordBookButtonView._shared_jitter_timer is None:
+            WordBookButtonView._shared_jitter_timer = QTimer(interval=16)
+            WordBookButtonView._shared_jitter_timer.timeout.connect(
+                WordBookButtonView._on_shared_jitter_timeout
+            )
+        if not WordBookButtonView._shared_jitter_timer.isActive():
+            WordBookButtonView._shared_jitter_timer.start()
         self._update_delete_btn()
 
     def stop_jitter(self) -> None:
-        if self._jitter_anim:
-            self._jitter_anim.stop()
-            self._jitter_anim.deleteLater()
-            self._jitter_anim = None
+        if self in WordBookButtonView._jittering_buttons:
+            WordBookButtonView._jittering_buttons.remove(self)
+        if (WordBookButtonView._shared_jitter_timer and
+                not WordBookButtonView._jittering_buttons):
+            WordBookButtonView._shared_jitter_timer.stop()
+            WordBookButtonView._shared_jitter_timer.deleteLater()
+            WordBookButtonView._shared_jitter_timer = None
         self.rotation = 0.0
         self._edit_mode = False
         self._update_delete_btn()

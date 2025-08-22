@@ -26,7 +26,10 @@ def calculate_main_button_positions(
     main_buttons_for_layout = [btn for btn in buttons if
                                not btn.is_sub_button and not getattr(btn, 'is_new_button', False)]
 
-    buttons_per_row = max(1, (central_widget_width - spacing) // (button_width + spacing))
+    # Include the trailing spacing when calculating how many buttons fit per row.
+    # This prevents the layout from falling back to a single column when there is
+    # still enough room for an additional button plus its spacing.
+    buttons_per_row = max(1, (central_widget_width + spacing) // (button_width + spacing))
 
     idx = 0
     for btn in buttons:
@@ -66,8 +69,11 @@ def calculate_sub_button_positions(
     current_x = folder_internal_spacing
     current_y = start_y_for_subs
 
-    sub_buttons_per_row = max(1, int((central_widget_width - folder_internal_spacing) // (
-                button_width + folder_internal_spacing)))
+    # 同样在计算子按钮每行数量时考虑尾部空隙，避免宽度充足时仍挤成一列
+    sub_buttons_per_row = max(
+        1,
+        int((central_widget_width + folder_internal_spacing) // (button_width + folder_internal_spacing)),
+    )
 
     for idx, sub_btn in enumerate(folder_button.sub_buttons):
         if idx > 0 and idx % sub_buttons_per_row == 0:
@@ -291,13 +297,8 @@ class FolderLayoutMixin:
             elif current_x + bw > available_width - sp:
                 current_y += bh + sp
                 current_x = sp
-
-            if not getattr(self.new_book_button, "is_dragging", False) and \
-                    self.new_book_button.pos() != QPoint(current_x, current_y):
-                from ._animations import create_button_position_animation
-                anim = create_button_position_animation(self.new_book_button, QPoint(current_x, current_y),
-                                                        duration=100)
-                anim.start()
+            if not getattr(self.new_book_button, "is_dragging", False):
+                self.new_book_button.move(QPoint(current_x, current_y))
 
     def finalize_button_order(self):
         all_main_buttons = [b for b in self.buttons if not b.is_sub_button and not getattr(b, 'is_new_button', False)]

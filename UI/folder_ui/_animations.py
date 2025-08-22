@@ -524,7 +524,10 @@ class FolderAnimationMixin:
     ):
         # self refers to CoverContent
         bw, bh, sp = self.button_width, self.button_height, self.spacing
-        avail_w = self.scroll_content.width() or self.scroll_area.viewport().width()
+        # Layout should rely on the current viewport width. Using scroll_content's
+        # width can cause temporary miscalculations when its size hasn't updated
+        # yet, leading to buttons squeezing into a single row.
+        avail_w = self.scroll_area.viewport().width()
         x, y = sp, sp + (getattr(self, "top_margin", 40) or 40)
         final_pos: Dict['WordBookButton', QPoint] = {}  # Use actual button type if available
 
@@ -532,7 +535,9 @@ class FolderAnimationMixin:
         if hasattr(self, 'buttons'):
             buttons_for_layout = self.buttons
 
-        buttons_per_row = max(1, (avail_w - sp) // (bw + sp))
+        # Include trailing spacing so an extra button can fit when there's just
+        # enough room, avoiding premature fallback to a single column.
+        buttons_per_row = max(1, (avail_w + sp) // (bw + sp))
         main_button_idx = 0
 
         skip_set = set(skip_buttons) if skip_buttons else set()
@@ -559,9 +564,11 @@ class FolderAnimationMixin:
                 sub_x = sp  # Sub-buttons start from the left, using normal spacing for first item
 
                 fsp = sp * 1.5  # Folder internal spacing for subsequent items in a row
-                # Sub-buttons per row calculation should consider the specific layout for sub-buttons
-                sub_buttons_per_row = max(1, int((avail_w - sp - (sp - fsp)) // (
-                            bw + fsp)))  # Adjusted for potentially tighter packing
+                # 同样在子按钮排布时考虑尾部空隙，避免宽度充足时仍挤成一列
+                sub_buttons_per_row = max(
+                    1,
+                    int((avail_w + fsp) // (bw + fsp)),
+                )
 
                 for idx, sub_btn in enumerate(btn.sub_buttons):
                     if sub_btn in skip_set or getattr(sub_btn, "is_dragging", False):

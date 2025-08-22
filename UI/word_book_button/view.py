@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QPushButton, QMenu, QInputDialog, QLineEdit
 )
 
-from UI.styles import RED_BUTTON_STYLE
+from UI.styles import RED_BUTTON_STYLE, SMALL_RED_BUTTON_STYLE
 from UI.folder_ui.api import calculate_reorder_area
 
 # -------- 常量 -------- #
@@ -101,9 +101,9 @@ class WordBookButtonView(QPushButton):
         self.name_edit.returnPressed.connect(self._finish_name_edit)
         self.name_edit.editingFinished.connect(self._finish_name_edit)
 
-        self.delete_btn = QPushButton("X", self)
+        self.delete_btn = QPushButton("✕", self)
         self.delete_btn.setFixedSize(22, 22)
-        self.delete_btn.setStyleSheet(RED_BUTTON_STYLE)
+        self.delete_btn.setStyleSheet(SMALL_RED_BUTTON_STYLE)
         self.delete_btn.hide()
         self.delete_btn.clicked.connect(self.deleteRequested)
         self._update_delete_btn()

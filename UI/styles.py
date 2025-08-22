@@ -135,6 +135,24 @@ RED_BUTTON_STYLE = f"""
     }}
 """
 
+# 专用于小型删除按钮的红色样式（无内边距，适合 20-30px 尺寸）
+SMALL_RED_BUTTON_STYLE = f"""
+    QPushButton {{
+        background-color: #FF4D4D;
+        color: {WHITE_COLOR};
+        border: none;
+        border-radius: 4px;
+        padding: 0px;
+        font-size: 14px;
+    }}
+    QPushButton:hover {{
+        background-color: #FF8080;
+    }}
+    QPushButton:pressed {{
+        background-color: #FF4D4D;
+    }}
+"""
+
 GRAY_INPUT_STYLE = """
     QLineEdit {
         border: 2px solid #ddd;

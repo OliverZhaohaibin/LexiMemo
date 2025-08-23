@@ -45,7 +45,12 @@ class CoverView(FrostedGlassMixin, QWidget):
         self.search_bar.installEventFilter(self)
 
         head = QHBoxLayout()
-        head.setContentsMargins(0, 0, 0, 0)
+        # Leave breathing room around the controls so they don't get clipped
+        # by the window's rounded mask. This offsets them from the curved
+        # corners and top title bar, fixing the truncated "编辑" button seen
+        # when margins were zero.
+        head.setContentsMargins(16, 8, 16, 8)
+        head.setSpacing(10)
         head.addWidget(self.edit_btn)
         head.addWidget(self.search_bar, 1)
 

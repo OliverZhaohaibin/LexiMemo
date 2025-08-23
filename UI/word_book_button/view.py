@@ -187,15 +187,8 @@ class WordBookButtonView(QPushButton):
                 self._dragging = False
                 self.is_dragging = False
                 self.raise_()
-                # Only collapse folders when dragging main buttons
-                if not self.is_sub_button and hasattr(self.app, 'collapse_all_folders'):
-                    try:
-                        self.app.collapse_all_folders(skip_buttons=[self])
-                        self._collapsed_for_drag = True
-                    except Exception:
-                        self._collapsed_for_drag = False
-                else:
-                    self._collapsed_for_drag = False
+                # Delay collapsing folders until an actual drag starts
+                self._collapsed_for_drag = False
         super().mousePressEvent(ev)
 
     def mouseReleaseEvent(self, ev):  # noqa: N802
@@ -221,12 +214,6 @@ class WordBookButtonView(QPushButton):
                         self.app.hide_frame()
                     if hasattr(self.app, 'controller') and hasattr(self.app.controller, 'save_current_layout'):
                         self.app.controller.save_current_layout()
-                if hasattr(self.parent(), "update_button_positions"):
-                    try:
-                        if not self._collapsed_for_drag:
-                            self.parent().update_button_positions()
-                    except Exception:
-                        pass
             elif not self._edit_mode and self.rect().contains(ev.pos()):
                 if self.is_folder and hasattr(self, "app") and self.app:
                     try:
@@ -244,6 +231,14 @@ class WordBookButtonView(QPushButton):
             if not self._dragging and (ev.pos() - self._drag_offset).manhattanLength() > 3:
                 self._dragging = True
                 self.is_dragging = True
+                # Collapse folders only once dragging is confirmed
+                if (not self.is_sub_button and hasattr(self.app, 'collapse_all_folders')
+                        and not self._collapsed_for_drag):
+                    try:
+                        self.app.collapse_all_folders(skip_buttons=[self])
+                        self._collapsed_for_drag = True
+                    except Exception:
+                        self._collapsed_for_drag = False
             if self._dragging:
                 new_pos = self.mapToParent(ev.pos() - self._drag_offset)
                 self.move(new_pos)
@@ -346,11 +341,6 @@ class WordBookButtonView(QPushButton):
             if hasattr(self.app, 'finalize_button_order'):
                 try:
                     self.app.finalize_button_order()
-                except Exception:
-                    pass
-            if hasattr(self.parent(), 'update_button_positions'):
-                try:
-                    self.parent().update_button_positions()
                 except Exception:
                     pass
             self.is_dragging = False

@@ -544,7 +544,14 @@ class FolderAnimationMixin:
 
         for btn in buttons_for_layout:
             if btn in skip_set or getattr(btn, "is_dragging", False):
-                continue  # Skip dragging/explicitly skipped button for calculation
+                # Reserve a slot but keep current position for dragged/skipped buttons
+                if main_button_idx > 0 and main_button_idx % buttons_per_row == 0:
+                    y += bh + sp
+                    x = sp
+                final_pos[btn] = btn.pos()
+                x += bw + sp
+                main_button_idx += 1
+                continue
 
             if main_button_idx > 0 and main_button_idx % buttons_per_row == 0:
                 y += bh + sp
@@ -571,12 +578,15 @@ class FolderAnimationMixin:
                 )
 
                 for idx, sub_btn in enumerate(btn.sub_buttons):
-                    if sub_btn in skip_set or getattr(sub_btn, "is_dragging", False):
-                        continue
-
                     if idx > 0 and idx % sub_buttons_per_row == 0:
                         y += bh + fsp  # Move to next row for sub-buttons
                         sub_x = sp
+
+                    if sub_btn in skip_set or getattr(sub_btn, "is_dragging", False):
+                        # Keep current position but still advance slot
+                        final_pos[sub_btn] = sub_btn.pos()
+                        sub_x += (bw + fsp)
+                        continue
 
                     final_pos[sub_btn] = QPoint(sub_x, y)
                     sub_x += (bw + fsp)

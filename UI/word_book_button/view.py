@@ -141,6 +141,12 @@ class WordBookButtonView(QPushButton):
                 self._drag_offset = ev.pos()
                 self._dragging = False
                 self.raise_()
+                if (hasattr(self, "app") and self.app and not self.is_sub_button
+                        and hasattr(self.app, "collapse_all_folders")):
+                    try:
+                        self.app.collapse_all_folders()
+                    except Exception:
+                        pass
         super().mousePressEvent(ev)
 
     def mouseReleaseEvent(self, ev):  # noqa: N802
@@ -206,7 +212,7 @@ class WordBookButtonView(QPushButton):
                             self.drag_out_threshold_exceeded = True
                     else:
                         self.app.check_button_proximity(self)
-                        self.app.update_button_order(self)
+                        self.app.update_button_order(self, realtime=True)
                 return
         super().mouseMoveEvent(ev)
 

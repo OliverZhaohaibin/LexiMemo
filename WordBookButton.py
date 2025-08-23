@@ -485,7 +485,7 @@ class WordBookButton(QPushButton):
                 self.drag_out_threshold_exceeded = True
         else:  # Main button drag
             self.app.check_button_proximity(self)
-            self.app.update_button_order(self)  # This calls animate_button_positions
+            self.app.update_button_order(self, realtime=True)
 
     def mouseReleaseEvent(self, event):
         self._stop_recenter_timer()

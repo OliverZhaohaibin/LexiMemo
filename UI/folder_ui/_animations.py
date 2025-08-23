@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect
 from typing import Dict, List  # Import Dict and List
 
 # Import necessary components from sibling _modules
-from ._background import FolderBackground  # update_folder_background is called by update_button_positions
+from ._background import FolderBackground, update_all_folder_backgrounds  # update_folder_background is called by update_button_positions
 
 
 def create_folder_toggle_animation(folder_button, target_positions: List[QPoint], button_width, button_height,
@@ -161,6 +161,10 @@ class FolderAnimationMixin:
             # If no folders were actually collapsed (e.g., all were already closed),
             # still trigger a layout update to ensure consistency, especially if exiting edit mode.
             QTimer.singleShot(0, self.update_button_positions)
+
+        # Ensure folder background frames are refreshed after collapsing
+        delay = 600 if any_folder_animated else 0
+        QTimer.singleShot(delay, lambda: update_all_folder_backgrounds(self, self.button_width, self.button_height))
 
     def expand_all_folders(self):
         """恢复上一次 `collapse_all_folders` 保存的展开状态。"""

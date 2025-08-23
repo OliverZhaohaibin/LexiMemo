@@ -34,6 +34,7 @@ class WordBookButton(QPushButton):
         self._cursor_offset = QPoint()
         self.drag_out_threshold_exceeded = False
         self._origin_pos = QPoint()  # Original widget position before drag
+        self._collapse_invoked = False  # Track whether collapse_all_folders has run for this drag
 
         self._rotation = 0.0
         if hasattr(self.app, "button_width") and hasattr(self.app, "button_height"):
@@ -381,11 +382,44 @@ class WordBookButton(QPushButton):
         self.delete_button.setVisible(show)
         if show: self.delete_button.raise_()
 
+    def _collapse_all_folders_with_recenter(self):
+        if (self._collapse_invoked or self.is_sub_button or not self.app or
+                not hasattr(self.app, 'collapse_all_folders')):
+            return
+        self._collapse_invoked = True
+        scroll_area = getattr(self.app, "scroll_area", None)
+        old_scroll_value = scroll_area.verticalScrollBar().value() if scroll_area else 0
+        self.app.collapse_all_folders()
+
+        def _reposition_after_collapse():
+            if not self.is_dragging and self.mouse_press_pos_local is None:
+                self._stop_recenter_timer()
+                return
+            if not self.parentWidget():
+                self._stop_recenter_timer()
+                return
+            if scroll_area:
+                current_max_scroll = scroll_area.verticalScrollBar().maximum()
+                scroll_area.verticalScrollBar().setValue(min(old_scroll_value, current_max_scroll))
+            current_mouse_global = QCursor.pos()
+            target_button_global_tl = current_mouse_global - self._cursor_offset
+            new_local_pos = self.parentWidget().mapFromGlobal(target_button_global_tl)
+            if (self.pos() - new_local_pos).manhattanLength() > 1:
+                self.move(new_local_pos)
+
+        self._recenter_timer = QTimer(self)
+        self._recenter_timer.setInterval(10)
+        self._recenter_timer.timeout.connect(_reposition_after_collapse)
+        self._recenter_timer.start()
+        _reposition_after_collapse()
+        QTimer.singleShot(800, self._stop_recenter_timer)
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self._start_press_effect()
             self.mouse_press_pos_local = event.position().toPoint()  # Store local press position
             self.is_dragging = False  # Assume it's a click until drag threshold is met
+            self._collapse_invoked = False  # reset for new press
 
             if self.app and self.app.edit_mode and not getattr(self, "is_new_button", False):
                 self._origin_pos = self.pos()
@@ -395,37 +429,8 @@ class WordBookButton(QPushButton):
                 self.raise_()  # Raise button for dragging
 
                 # Recenter timer logic only if it's a main button and collapse is needed
-                if not self.is_sub_button and hasattr(self.app, 'collapse_all_folders'):
-                    scroll_area = getattr(self.app, "scroll_area", None)
-                    old_scroll_value = scroll_area.verticalScrollBar().value() if scroll_area else 0
-                    self.app.collapse_all_folders()
-
-                    def _reposition_after_collapse():
-                        # Check if still valid to reposition (e.g., button still exists, drag ongoing)
-                        if not self.is_dragging and self.mouse_press_pos_local is None:  # Check if drag started
-                            self._stop_recenter_timer()
-                            return
-                        if not self.parentWidget():  # Safety check
-                            self._stop_recenter_timer()
-                            return
-
-                        if scroll_area:
-                            current_max_scroll = scroll_area.verticalScrollBar().maximum()
-                            scroll_area.verticalScrollBar().setValue(min(old_scroll_value, current_max_scroll))
-
-                        current_mouse_global = QCursor.pos()
-                        target_button_global_tl = current_mouse_global - self._cursor_offset
-                        new_local_pos = self.parentWidget().mapFromGlobal(target_button_global_tl)
-
-                        if (self.pos() - new_local_pos).manhattanLength() > 1:
-                            self.move(new_local_pos)
-
-                    self._recenter_timer = QTimer(self)
-                    self._recenter_timer.setInterval(10)
-                    self._recenter_timer.timeout.connect(_reposition_after_collapse)
-                    self._recenter_timer.start()
-                    _reposition_after_collapse()  # Try immediate reposition
-                    QTimer.singleShot(800, self._stop_recenter_timer)  # Safety stop
+                if not self.is_sub_button:
+                    self._collapse_all_folders_with_recenter()
             # For non-edit mode, or "new button", we still call super.mousePressEvent
             # to get the visual "pressed" state. The actual "clicked" signal is emitted on release.
             else:
@@ -447,8 +452,12 @@ class WordBookButton(QPushButton):
         if not self.is_dragging and self.mouse_press_pos_local is not None:
             if (event.position().toPoint() - self.mouse_press_pos_local).manhattanLength() > self.DRAG_THRESHOLD:
                 self.is_dragging = True
-                # Potentially stop recenter timer here if it was started, as manual drag takes over
-                self._stop_recenter_timer()
+                # If collapse wasn't invoked on press (e.g. edit_mode toggled after press), do it now
+                if not self._collapse_invoked:
+                    self._collapse_all_folders_with_recenter()
+                # Stop recenter timer once dragging begins
+                else:
+                    self._stop_recenter_timer()
 
         if not self.is_dragging:
             # If not dragging yet (threshold not met), let super handle it
@@ -485,7 +494,7 @@ class WordBookButton(QPushButton):
                 self.drag_out_threshold_exceeded = True
         else:  # Main button drag
             self.app.check_button_proximity(self)
-            self.app.update_button_order(self)  # This calls animate_button_positions
+            self.app.update_button_order(self, realtime=True)
 
     def mouseReleaseEvent(self, event):
         self._stop_recenter_timer()
@@ -495,6 +504,7 @@ class WordBookButton(QPushButton):
 
         # Reset dragging state and press position for next interaction
         self.is_dragging = False
+        self._collapse_invoked = False
         current_mouse_press_pos_local = self.mouse_press_pos_local
         self.mouse_press_pos_local = None
 

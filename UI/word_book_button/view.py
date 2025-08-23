@@ -206,7 +206,7 @@ class WordBookButtonView(QPushButton):
                             self.drag_out_threshold_exceeded = True
                     else:
                         self.app.check_button_proximity(self)
-                        self.app.update_button_order(self)
+                        self.app.update_button_order(self, realtime=True)
                 return
         super().mouseMoveEvent(ev)
 

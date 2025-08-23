@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 
-from PySide6.QtCore import Qt, QRectF
+from PySide6.QtCore import Qt, QRectF, QPropertyAnimation
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import (
     QFrame,
@@ -126,4 +126,17 @@ class FrostedGlassMixin:
     def _set_glass_color(self, color: str) -> None:
         if hasattr(self, "_glass_bg"):
             self._glass_bg.setColor(color)
+
+
+class FadeInWindowMixin:
+    """Mixin that fades the window in on show for smoother popups."""
+
+    def showEvent(self, event):  # type: ignore[override]
+        self.setWindowOpacity(0.0)
+        anim = QPropertyAnimation(self, b"windowOpacity", self)
+        anim.setDuration(200)
+        anim.setStartValue(0.0)
+        anim.setEndValue(1.0)
+        anim.start(QPropertyAnimation.DeleteWhenStopped)
+        super().showEvent(event)
 

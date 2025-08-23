@@ -17,9 +17,10 @@ from utils import get_tags_path, get_total_tags_path
 from services.wordbook_service import WordBookService as WS
 from UI.styles import GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, GRAY_INPUT_STYLE, GRAY_TEXT_EDIT_STYLE, PRIMARY_BUTTON_STYLE, \
     SECONDARY_BUTTON_STYLE
+from UI.glass_effect import FadeInWindowMixin
 
 
-class WordEntryUI(QWidget):
+class WordEntryUI(FadeInWindowMixin, QWidget):
     save_successful = Signal(Word)
     def __init__(self, path):
         super(WordEntryUI, self).__init__()

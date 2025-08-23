@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QPoint
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QToolButton,
+    QStyle,
+)
 
 
 class TitleBar(QFrame):
@@ -13,12 +19,13 @@ class TitleBar(QFrame):
         self.setFixedHeight(36)
         self.setObjectName("titleBar")
         self.setStyleSheet(
-            "#titleBar{background-color: rgba(255,255,255,180);"
-            "border-bottom: 1px solid rgba(255,255,255,40);}" 
-            "#titleBar QPushButton{background: transparent; border: none;"
-            "width: 32px; height: 24px; color: #333;}" 
-            "#titleBar QPushButton:hover{background: rgba(255,255,255,80);}" 
-            "#titleBar QPushButton#closeButton:hover{background: #e81123; color: white;}"
+            "#titleBar{background-color: #f0f0f2;" 
+            "border-bottom: 1px solid #d0d0d0;}"
+            "#titleBar QToolButton{background: transparent; border: none;"
+            "width: 36px; height: 24px;}"
+            "#titleBar QToolButton:hover{background: #e0e0e0; border-radius:4px;}"
+            "#titleBar QToolButton:pressed{background: #c8c8c8;}"
+            "#titleBar QToolButton#closeButton:hover{background: #e81123;}"
         )
 
         layout = QHBoxLayout(self)
@@ -30,16 +37,22 @@ class TitleBar(QFrame):
         layout.addWidget(self._title_label)
         layout.addStretch(1)
 
-        self._min_btn = QPushButton("-", self)
+        self._min_btn = QToolButton(self)
+        self._min_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMinButton))
+        self._min_btn.setCursor(Qt.PointingHandCursor)
         self._min_btn.clicked.connect(parent.showMinimized)
         layout.addWidget(self._min_btn)
 
-        self._max_btn = QPushButton("◻", self)
+        self._max_btn = QToolButton(self)
+        self._max_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMaxButton))
+        self._max_btn.setCursor(Qt.PointingHandCursor)
         self._max_btn.clicked.connect(self._toggle_max)
         layout.addWidget(self._max_btn)
 
-        self._close_btn = QPushButton("✕", self)
+        self._close_btn = QToolButton(self)
         self._close_btn.setObjectName("closeButton")
+        self._close_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarCloseButton))
+        self._close_btn.setCursor(Qt.PointingHandCursor)
         self._close_btn.clicked.connect(parent.close)
         layout.addWidget(self._close_btn)
 
@@ -49,13 +62,17 @@ class TitleBar(QFrame):
     def _toggle_max(self) -> None:
         if self._parent.isMaximized():
             self._parent.showNormal()
+            self._max_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMaxButton))
         else:
             self._parent.showMaximized()
+            self._max_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarNormalButton))
 
     # ---------------------------------------------------------
     def mousePressEvent(self, event):  # type: ignore[override]
         if event.button() == Qt.LeftButton:
-            self._drag_pos = event.globalPosition().toPoint()
+            child = self.childAt(event.position().toPoint())
+            if not isinstance(child, QToolButton):
+                self._drag_pos = event.globalPosition().toPoint()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):  # type: ignore[override]
@@ -71,5 +88,7 @@ class TitleBar(QFrame):
 
     def mouseDoubleClickEvent(self, event):  # type: ignore[override]
         if event.button() == Qt.LeftButton:
-            self._toggle_max()
+            child = self.childAt(event.position().toPoint())
+            if not isinstance(child, QToolButton):
+                self._toggle_max()
         super().mouseDoubleClickEvent(event)

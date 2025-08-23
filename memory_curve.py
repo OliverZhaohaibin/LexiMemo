@@ -12,13 +12,13 @@ from PySide6.QtWidgets import (
 from UI.font import meaning_font, main_word_font, list_word_font, sentence_font, normal_font
 from UI.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE
 from services.memory_service import MemoryService
-from UI.glass_effect import FrostedGlassMixin
+from UI.glass_effect import FrostedGlassMixin, FadeInWindowMixin
 from UI.title_bar import TitleBar
 
 # 艾宾浩斯遗忘曲线复习间隔（单位：天）
 MEMORY_INTERVALS = [0, 1, 2, 4, 7, 15, 30]
 
-class MemoryCurveApp(QWidget, FrostedGlassMixin):
+class MemoryCurveApp(FadeInWindowMixin, QWidget, FrostedGlassMixin):
     def __init__(self, path):
         super().__init__()
         self.path = os.path.dirname(os.path.abspath(sys.argv[0]))  # 使用可执行文件所在目录

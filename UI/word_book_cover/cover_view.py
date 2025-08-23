@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QListWidget, QLabel
 )
 from UI.word_book_cover.cover_content import CoverContent
-from UI.styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, TEXT_EDIT_STYLE
+from UI.styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, TEXT_EDIT_STYLE, BACKGROUND_COLOR
 from UI.title_bar import TitleBar
 
 
@@ -28,6 +28,7 @@ class CoverView(QWidget):
         self.setWindowTitle("背单词程序")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.resize(660, 720)
+        self.setStyleSheet(f"background-color: {BACKGROUND_COLOR};")
 
         # ========= ① 头部 =========
         self.edit_btn = QPushButton("编辑")

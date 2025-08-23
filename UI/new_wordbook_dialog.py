@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QColorDialog, QMessageBox
 )
 from PySide6.QtGui import QColor
-from UI.glass_effect import FrostedGlassMixin
+from UI.glass_effect import FrostedGlassMixin, with_alpha
 
 
 class NewWordBookDialog(QDialog, FrostedGlassMixin):
@@ -14,11 +14,11 @@ class NewWordBookDialog(QDialog, FrostedGlassMixin):
         super().__init__(parent)
         self.setWindowTitle("新建单词本")
         self.resize(320, 150)
-        self._init_glass()
+        self.book_color: str = "#a3d2ca"   # 默认色
+        self._init_glass(color=with_alpha(self.book_color, 90))
 
         self._build_ui()
         self.book_name: str | None = None
-        self.book_color: str = "#a3d2ca"   # 默认色
 
     # ------------------------------------------------------------
     def _build_ui(self):
@@ -43,6 +43,7 @@ class NewWordBookDialog(QDialog, FrostedGlassMixin):
             self.book_color = c.name()
             self.color_btn.setText(f"选择颜色 ({self.book_color})")
             self.color_btn.setStyleSheet(f"background:{self.book_color}")
+            self._set_glass_color(with_alpha(self.book_color, 90))
 
     def _accept(self):
         name = self.name_edit.text().strip()

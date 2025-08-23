@@ -4,15 +4,17 @@ from PySide6.QtWidgets import (
     QColorDialog, QMessageBox
 )
 from PySide6.QtGui import QColor
+from UI.glass_effect import FrostedGlassMixin
 
 
-class NewWordBookDialog(QDialog):
+class NewWordBookDialog(QDialog, FrostedGlassMixin):
     """输入『名称 + 颜色』的简单对话框"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("新建单词本")
         self.resize(320, 150)
+        self._init_glass()
 
         self._build_ui()
         self.book_name: str | None = None

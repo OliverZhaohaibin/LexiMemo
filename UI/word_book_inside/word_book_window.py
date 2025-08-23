@@ -4,6 +4,7 @@ import os
 from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QApplication
 from UI.font import normal_font
 from PySide6.QtCore import Qt
+from UI.glass_effect import FrostedGlassMixin
 
 from UI.word_book_inside.word_list_panel import WordListPanel
 from UI.word_book_inside.word_detail_panel import WordDetailPanel
@@ -12,7 +13,7 @@ from services.wordbook_service import WordBookService as WS
 from domain.models import Word
 
 
-class WordBookWindow(QWidget):
+class WordBookWindow(QWidget, FrostedGlassMixin):
     """顶层壳（替代原 inside.WordBookApp）。"""
 
     def __init__(self, path: str, target_word: str | None = None):
@@ -22,6 +23,7 @@ class WordBookWindow(QWidget):
         self.book_color = os.path.basename(path).split("_")[2]
         self.setWindowTitle(f"单词本 - {self.book_name}")
         self.resize(1200, 800)
+        self._init_glass()
 
         self._build_ui()
         if target_word:

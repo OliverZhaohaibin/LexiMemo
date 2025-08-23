@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 from UI.word_book_cover.cover_content import CoverContent
 from UI.styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, TEXT_EDIT_STYLE
+from UI.title_bar import TitleBar
 
 
 class CoverView(QWidget):
@@ -25,6 +26,7 @@ class CoverView(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("背单词程序")
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.resize(660, 720)
 
         # ========= ① 头部 =========
@@ -57,6 +59,9 @@ class CoverView(QWidget):
 
         # ========= ③ 根布局 =========
         root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        root.addWidget(TitleBar(self, "背单词程序"))
         root.addLayout(head)
         root.addWidget(self.scroll_area)
 

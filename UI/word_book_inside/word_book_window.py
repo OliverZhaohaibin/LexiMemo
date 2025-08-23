@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QApplication
 from UI.font import normal_font
 from PySide6.QtCore import Qt
 from UI.glass_effect import FrostedGlassMixin
+from UI.title_bar import TitleBar
 
 from UI.word_book_inside.word_list_panel import WordListPanel
 from UI.word_book_inside.word_detail_panel import WordDetailPanel
@@ -22,6 +23,7 @@ class WordBookWindow(QWidget, FrostedGlassMixin):
         self.book_name = os.path.basename(path).split("_")[1]
         self.book_color = os.path.basename(path).split("_")[2]
         self.setWindowTitle(f"单词本 - {self.book_name}")
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.resize(1200, 800)
         # keep a neutral frosted shell; front elements carry the theme color
         self._init_glass(blur_radius=35, border_radius=25)
@@ -33,6 +35,10 @@ class WordBookWindow(QWidget, FrostedGlassMixin):
     # ------------------------------------------------------------------
     def _build_ui(self):
         lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+        lay.addWidget(TitleBar(self, f"单词本 - {self.book_name}"))
+
         self.split = QSplitter(Qt.Horizontal)
         self.list_panel = WordListPanel(self.book_name, self.book_color)
         self.list_panel.word_selected.connect(self._on_word_selected)

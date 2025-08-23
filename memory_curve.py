@@ -13,6 +13,7 @@ from UI.font import meaning_font, main_word_font, list_word_font, sentence_font,
 from UI.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE
 from services.memory_service import MemoryService
 from UI.glass_effect import FrostedGlassMixin
+from UI.title_bar import TitleBar
 
 # 艾宾浩斯遗忘曲线复习间隔（单位：天）
 MEMORY_INTERVALS = [0, 1, 2, 4, 7, 15, 30]
@@ -39,10 +40,17 @@ class MemoryCurveApp(QWidget, FrostedGlassMixin):
         
     def init_ui(self):
         self.setWindowTitle(f"背单词 - {self.book_name}")
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.resize(800, 600)
-        
-        main_layout = QVBoxLayout()
-        
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        main_layout.addWidget(TitleBar(self, self.windowTitle()))
+
+        content = QVBoxLayout()
+        main_layout.addLayout(content)
+
         # 顶部信息栏
         info_layout = QHBoxLayout()
         self.progress_label = QLabel("进度: 0/0")
@@ -50,26 +58,26 @@ class MemoryCurveApp(QWidget, FrostedGlassMixin):
         info_layout.addWidget(self.progress_label)
         info_layout.addStretch()
         info_layout.addWidget(self.correct_label)
-        main_layout.addLayout(info_layout)
+        content.addLayout(info_layout)
         
         # 分隔线
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
-        main_layout.addWidget(line)
+        content.addWidget(line)
         
         # 释义区域
         self.meaning_area = QTextEdit()
         self.meaning_area.setReadOnly(True)
         self.meaning_area.setFont(meaning_font)
         self.meaning_area.setStyleSheet(TEXT_EDIT_STYLE)
-        main_layout.addWidget(self.meaning_area)
+        content.addWidget(self.meaning_area)
         
         # 下划线提示区域
         self.hint_label = QLabel("")
         self.hint_label.setAlignment(Qt.AlignCenter)
         self.hint_label.setFont(main_word_font)
-        main_layout.addWidget(self.hint_label)
+        content.addWidget(self.hint_label)
         
         # 输入区域
         input_layout = QHBoxLayout()
@@ -80,19 +88,19 @@ class MemoryCurveApp(QWidget, FrostedGlassMixin):
         self.word_input.returnPressed.connect(self.check_answer)
         self.word_input.textChanged.connect(self.update_hint_display)
         input_layout.addWidget(self.word_input)
-        
+
         self.check_button = QPushButton("确认")
         self.check_button.setStyleSheet(PRIMARY_BUTTON_STYLE)
         self.check_button.clicked.connect(self.check_answer)
         input_layout.addWidget(self.check_button)
-        
-        main_layout.addLayout(input_layout)
+
+        content.addLayout(input_layout)
         
         # 结果显示区域
         self.result_label = QLabel("")
         self.result_label.setAlignment(Qt.AlignCenter)
         self.result_label.setFont(main_word_font)
-        main_layout.addWidget(self.result_label)
+        content.addWidget(self.result_label)
         
         # 例句区域
         self.example_area = QTextEdit()
@@ -100,30 +108,28 @@ class MemoryCurveApp(QWidget, FrostedGlassMixin):
         self.example_area.setFont(sentence_font)
         self.example_area.setStyleSheet(TEXT_EDIT_STYLE)
         self.example_area.setVisible(False)  # 初始隐藏
-        main_layout.addWidget(self.example_area)
+        content.addWidget(self.example_area)
         
         # 按钮区域
         button_layout = QHBoxLayout()
-        
+
         self.hint_button = QPushButton("提示")
         self.hint_button.setStyleSheet(SECONDARY_BUTTON_STYLE)
         self.hint_button.clicked.connect(self.show_letter_hint)
         button_layout.addWidget(self.hint_button)
-        
+
         self.show_answer_button = QPushButton("显示答案")
         self.show_answer_button.setStyleSheet(SECONDARY_BUTTON_STYLE)
         self.show_answer_button.clicked.connect(self.show_answer)
         button_layout.addWidget(self.show_answer_button)
-        
+
         self.next_button = QPushButton("下一个")
         self.next_button.setStyleSheet(PRIMARY_BUTTON_STYLE)
         self.next_button.clicked.connect(self.next_word)
         self.next_button.setEnabled(False)  # 初始禁用
         button_layout.addWidget(self.next_button)
-        
-        main_layout.addLayout(button_layout)
-        
-        self.setLayout(main_layout)
+
+        content.addLayout(button_layout)
         
         # 初始化提示相关变量
         self.current_word = ""

@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 
 from PySide6.QtCore import Qt, QRectF, QPropertyAnimation
-from PySide6.QtGui import QColor, QPainter, QPainterPath
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QRegion
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsBlurEffect,
@@ -120,12 +120,14 @@ class FrostedGlassMixin:
         self._glass_shadow = shadow
         self._glass_base_radius = border_radius
         self._glass_radius = border_radius
+        self._update_mask()
 
     def resizeEvent(self, event):  # type: ignore[override]
         super().resizeEvent(event)
         if hasattr(self, "_glass_container"):
             self._glass_container.setGeometry(self.rect())
             self._glass_bg.setGeometry(self._glass_container.rect())
+            self._update_mask()
 
     def _set_glass_color(self, color: str) -> None:
         if hasattr(self, "_glass_bg"):
@@ -135,10 +137,19 @@ class FrostedGlassMixin:
         if hasattr(self, "_glass_bg"):
             self._glass_bg.setRadius(radius)
             self._glass_radius = radius
+            self._update_mask()
 
     def _set_shadow_enabled(self, enabled: bool) -> None:
         if hasattr(self, "_glass_shadow"):
             self._glass_shadow.setEnabled(enabled)
+
+    def _update_mask(self) -> None:
+        if getattr(self, "_glass_radius", 0) <= 0:
+            self.clearMask()
+            return
+        path = _r2_path(QRectF(self.rect()), self._glass_radius)
+        region = QRegion(path.toFillPolygon().toPolygon())
+        self.setMask(region)
 
 
 class FadeInWindowMixin:

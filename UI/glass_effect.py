@@ -101,6 +101,8 @@ class FrostedGlassMixin:
         container.setObjectName("glass_container")
         container.setGeometry(self.rect())
         container.setAttribute(Qt.WA_TranslucentBackground, True)
+        # allow mouse interactions to reach widgets above the frosted layer
+        container.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
         shadow = QGraphicsDropShadowEffect(container)
         shadow.setBlurRadius(40)
@@ -110,6 +112,7 @@ class FrostedGlassMixin:
         container.lower()
 
         bg = _R2Frame(color, border_radius, container)
+        bg.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         effect = QGraphicsBlurEffect(bg)
         effect.setBlurRadius(blur_radius)
         bg.setGraphicsEffect(effect)

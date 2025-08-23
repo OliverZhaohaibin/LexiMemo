@@ -20,7 +20,7 @@ from services.wordbook_service import WordBookService as WS
 from domain.models import Word
 
 
-class WordBookWindow(FadeInWindowMixin, QWidget, FrostedGlassMixin):
+class WordBookWindow(FadeInWindowMixin, FrostedGlassMixin, QWidget):
     """顶层壳（替代原 inside.WordBookApp）。"""
 
     def __init__(self, path: str, target_word: str | None = None):

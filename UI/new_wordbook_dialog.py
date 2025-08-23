@@ -14,7 +14,7 @@ from UI.styles import (
 from UI.title_bar import TitleBar
 
 
-class NewWordBookDialog(FadeInWindowMixin, QDialog, FrostedGlassMixin):
+class NewWordBookDialog(FadeInWindowMixin, FrostedGlassMixin, QDialog):
     """输入『名称 + 颜色』的简单对话框"""
 
     def __init__(self, parent=None):

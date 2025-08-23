@@ -6,6 +6,8 @@ from PySide6.QtCore import QObject, QEvent, Slot, Qt, QUrl, QTimer
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
 
+from UI.folder_ui.api import update_all_folder_backgrounds
+
 from UI.word_book_cover.cover_view import CoverView
 from services.folder_service import FolderService
 from services.cover_layout_service import CoverLayoutService
@@ -388,11 +390,14 @@ class CoverController(QObject):
                     QTimer.singleShot(50, lambda b_folder=btn: [sub.start_jitter() for sub in b_folder.sub_buttons if
                                                                 b_folder.is_expanded])
 
-            # After triggering all folder expansions, force a layout refresh so every
-            # folder gets a correctly sized gray background frame (the first folder
-            # occasionally missed this without an explicit post-expand update).
+            # After triggering all folder expansions, refresh gray background frames
+            # once animations settle so every folder, including the first, displays
+            # its overlay correctly.
             if hasattr(self.view, "content"):
-                QTimer.singleShot(700, self.view.content.update_button_positions)
+                content = self.view.content
+                QTimer.singleShot(700, lambda: update_all_folder_backgrounds(
+                    content, content.button_width, content.button_height
+                ))
 
         else:  # Exiting edit mode
             if hasattr(self.view.content, 'collapse_all_folders'):

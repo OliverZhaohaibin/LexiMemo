@@ -19,7 +19,8 @@ from PySide6.QtWidgets import (
     QSizeGrip,
 )
 from UI.font import normal_font
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
+from UI.title_bar import TitleBar
 
 from domain.models import Word
 
@@ -35,6 +36,7 @@ from UI.glass_effect import FadeInWindowMixin
 
 class WordEntryUI(FadeInWindowMixin, QWidget):
     save_successful = Signal(Word)
+
     def __init__(self, path):
         super(WordEntryUI, self).__init__()
         self.path = path  # 保存传入的路径
@@ -42,11 +44,22 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
         self.book_color = os.path.basename(path).split('_')[2]
 
         self.setWindowTitle("新单词")
-        self.resize(800, 700)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
+
+        hint = self.minimumSizeHint()
+        w = max(800, hint.width())
+        h = max(700, hint.height())
+        self.setMinimumSize(w, h)
+        self.resize(w, h)
 
         # expose a grip to allow manual resizing when the system frame is absent
         self._size_grip = QSizeGrip(self)
         self._size_grip.setFixedSize(16, 16)
+
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+        outer_layout.addWidget(TitleBar(self, "新单词"))
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
@@ -54,7 +67,9 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
 
-        self.layout = QVBoxLayout()
+        outer_layout.addWidget(self.scroll_area)
+
+        self.scroll_area.setWidget(self.scroll_content)
 
         # 单词
         self.word_layout = QHBoxLayout()
@@ -153,10 +168,6 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
 
         self.save_button.clicked.connect(self.save_word)
 
-        self.scroll_area.setWidget(self.scroll_content)
-        self.layout.addWidget(self.scroll_area)
-        self.setLayout(self.layout)
-
     # ---------------------------------------------------------------
     def resizeEvent(self, event):  # type: ignore[override]
         super().resizeEvent(event)
@@ -165,6 +176,7 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
                 self.width() - self._size_grip.width(),
                 self.height() - self._size_grip.height(),
             )
+            self._size_grip.raise_()
 
     def add_meaning_example_pair(self, row):
         """

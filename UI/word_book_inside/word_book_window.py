@@ -57,7 +57,8 @@ class WordBookWindow(FadeInWindowMixin, QWidget, FrostedGlassMixin):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(0)
-        lay.addWidget(TitleBar(self, f"单词本 - {self.book_name}"))
+        self._title_bar = TitleBar(self, f"单词本 - {self.book_name}")
+        lay.addWidget(self._title_bar)
 
         self.split = QSplitter(Qt.Horizontal)
         self.list_panel = WordListPanel(self.book_name, self.book_color)
@@ -134,6 +135,7 @@ class WordBookWindow(FadeInWindowMixin, QWidget, FrostedGlassMixin):
             self.width() - self._size_grip.width(),
             self.height() - self._size_grip.height(),
         )
+        self._size_grip.raise_()
 
 
 if __name__ == "__main__":

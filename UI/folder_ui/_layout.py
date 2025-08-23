@@ -256,7 +256,9 @@ class FolderLayoutMixin:
             for i, btn in enumerate(all_main_buttons):
                 if i < len(targets) and btn is not dragged_button and not getattr(btn, "is_dragging", False):
                     btn.move(targets[i])
+
             update_all_folder_backgrounds(self, self.button_width, self.button_height)
+
         else:
             from ._animations import create_button_position_animation
             anim_group = QParallelAnimationGroup(self)
@@ -300,8 +302,9 @@ class FolderLayoutMixin:
                     anim_group.addAnimation(anim)
 
         if duration > 0 and 'anim_group' in locals():
+
             anim_group.finished.connect(lambda: update_all_folder_backgrounds(self, self.button_width, self.button_height))
-            anim_group.start()
+
 
     def finalize_button_order(self):
         all_main_buttons = [b for b in self.buttons if not b.is_sub_button and not getattr(b, 'is_new_button', False)]

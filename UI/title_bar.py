@@ -9,6 +9,8 @@ from PySide6.QtWidgets import (
     QStyle,
 )
 
+from UI.styles import BACKGROUND_COLOR
+
 
 class TitleBar(QFrame):
     """A simple, stylish title bar with minimize, maximize, and close buttons."""
@@ -18,9 +20,8 @@ class TitleBar(QFrame):
         self._parent = parent
         self.setFixedHeight(36)
         self.setObjectName("titleBar")
-        self.setAttribute(Qt.WA_TranslucentBackground)
         self.setStyleSheet(
-            "#titleBar{background-color: transparent;}"
+            f"#titleBar{{background-color: {BACKGROUND_COLOR};}}"
             "#titleBar QToolButton{background: transparent; border: none;"
             "width: 36px; height: 24px; border-radius:4px;}"
             "#titleBar QToolButton:hover{background: rgba(255,255,255,0.3);}"

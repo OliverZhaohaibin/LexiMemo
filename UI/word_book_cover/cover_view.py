@@ -8,11 +8,12 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QListWidget, QLabel
 )
 from UI.word_book_cover.cover_content import CoverContent
-from UI.styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, TEXT_EDIT_STYLE, BACKGROUND_COLOR
+from UI.styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, TEXT_EDIT_STYLE
 from UI.title_bar import TitleBar
+from UI.glass_effect import FrostedGlassMixin
 
 
-class CoverView(QWidget):
+class CoverView(FrostedGlassMixin, QWidget):
     """
     纯 UI：标题栏 = 编辑按钮 + 全局搜索框
     中部 = ScrollArea，内部由 Controller 绝对定位各 WordBookButton
@@ -28,7 +29,9 @@ class CoverView(QWidget):
         self.setWindowTitle("背单词程序")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.resize(660, 720)
-        self.setStyleSheet(f"background-color: {BACKGROUND_COLOR};")
+        # apply a rounded R2 mask so the main view uses the same soft card
+        # shape as other windows
+        self._init_glass(blur_radius=0, border_radius=25)
 
         # ========= ① 头部 =========
         self.edit_btn = QPushButton("编辑")
@@ -49,9 +52,16 @@ class CoverView(QWidget):
         # ========= ② ScrollArea =========
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
+        # keep the scroll area transparent so the frosted background is
+        # visible through it
+        self.scroll_area.setStyleSheet(
+            "QScrollArea{background:transparent;border:none;}"
+            "QScrollArea> QWidget> QWidget{background:transparent;}"
+        )
 
         # ⭐ 改用 CoverContent（自带文件夹功能）
         self.content = CoverContent(self.scroll_area)
+        self.content.setStyleSheet("background:transparent;")
         self.scroll_area.setWidget(self.content)
 
         # —— 初次启动提示 —— #

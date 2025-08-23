@@ -18,13 +18,13 @@ class TitleBar(QFrame):
         self._parent = parent
         self.setFixedHeight(36)
         self.setObjectName("titleBar")
+        self.setAttribute(Qt.WA_TranslucentBackground)
         self.setStyleSheet(
-            "#titleBar{background-color: #f0f0f2;" 
-            "border-bottom: 1px solid #d0d0d0;}"
+            "#titleBar{background-color: transparent;}"
             "#titleBar QToolButton{background: transparent; border: none;"
-            "width: 36px; height: 24px;}"
-            "#titleBar QToolButton:hover{background: #e0e0e0; border-radius:4px;}"
-            "#titleBar QToolButton:pressed{background: #c8c8c8;}"
+            "width: 36px; height: 24px; border-radius:4px;}"
+            "#titleBar QToolButton:hover{background: rgba(255,255,255,0.3);}"
+            "#titleBar QToolButton:pressed{background: rgba(255,255,255,0.5);}"
             "#titleBar QToolButton#closeButton:hover{background: #e81123;}"
         )
 
@@ -63,9 +63,17 @@ class TitleBar(QFrame):
         if self._parent.isMaximized():
             self._parent.showNormal()
             self._max_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMaxButton))
+            if hasattr(self._parent, "_set_glass_radius"):
+                self._parent._set_glass_radius(getattr(self._parent, "_glass_base_radius", 0))
+            if hasattr(self._parent, "_set_shadow_enabled"):
+                self._parent._set_shadow_enabled(True)
         else:
             self._parent.showMaximized()
             self._max_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarNormalButton))
+            if hasattr(self._parent, "_set_glass_radius"):
+                self._parent._set_glass_radius(0)
+            if hasattr(self._parent, "_set_shadow_enabled"):
+                self._parent._set_shadow_enabled(False)
 
     # ---------------------------------------------------------
     def mousePressEvent(self, event):  # type: ignore[override]

@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 
 from PySide6.QtCore import Qt, QRectF, QPropertyAnimation
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
+from PySide6.QtGui import QColor, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsBlurEffect,
@@ -70,14 +70,16 @@ class _R2Frame(QFrame):
         self._color = QColor(color)
         self.update()
 
+    def setRadius(self, radius: int) -> None:
+        self._radius = radius
+        self.update()
+
     def paintEvent(self, event):  # type: ignore[override]
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         path = _r2_path(QRectF(self.rect()), self._radius)
         painter.fillPath(path, self._color)
-        pen = QPen(QColor(255, 255, 255, 60))
-        pen.setWidth(1)
-        painter.setPen(pen)
+        painter.setPen(Qt.NoPen)
         painter.drawPath(path)
 
 
@@ -115,6 +117,8 @@ class FrostedGlassMixin:
 
         self._glass_container = container
         self._glass_bg = bg
+        self._glass_shadow = shadow
+        self._glass_base_radius = border_radius
         self._glass_radius = border_radius
 
     def resizeEvent(self, event):  # type: ignore[override]
@@ -126,6 +130,15 @@ class FrostedGlassMixin:
     def _set_glass_color(self, color: str) -> None:
         if hasattr(self, "_glass_bg"):
             self._glass_bg.setColor(color)
+
+    def _set_glass_radius(self, radius: int) -> None:
+        if hasattr(self, "_glass_bg"):
+            self._glass_bg.setRadius(radius)
+            self._glass_radius = radius
+
+    def _set_shadow_enabled(self, enabled: bool) -> None:
+        if hasattr(self, "_glass_shadow"):
+            self._glass_shadow.setEnabled(enabled)
 
 
 class FadeInWindowMixin:

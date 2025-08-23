@@ -82,6 +82,7 @@ class WordBookButtonView(QPushButton):
         self._edit_mode = False
         self._drag_offset: QPoint | None = None
         self._dragging = False
+        self._collapse_invoked = False
         self.rename_source = "edit"
 
         # —— 内联重命名 & 删除按钮 —— #
@@ -140,17 +141,21 @@ class WordBookButtonView(QPushButton):
             if self._edit_mode:
                 self._drag_offset = ev.pos()
                 self._dragging = False
+                self._collapse_invoked = False
                 self.raise_()
                 if (hasattr(self, "app") and self.app and not self.is_sub_button
-                        and hasattr(self.app, "collapse_all_folders")):
+                        and hasattr(self.app, "collapse_all_folders") and not self._collapse_invoked):
                     try:
                         self.app.collapse_all_folders()
+                        self._collapse_invoked = True
                     except Exception:
                         pass
         super().mousePressEvent(ev)
 
     def mouseReleaseEvent(self, ev):  # noqa: N802
         if ev.button() == Qt.LeftButton:
+            collapse_was_invoked = self._collapse_invoked
+            self._collapse_invoked = False
             self._long_press_timer.stop()
             self._fade_dark()
             if self._edit_mode and self._dragging:
@@ -177,6 +182,11 @@ class WordBookButtonView(QPushButton):
                         self.parent().update_button_positions()
                     except Exception:
                         pass
+            elif self._edit_mode and collapse_was_invoked and not self.is_sub_button and hasattr(self.app, 'expand_all_folders'):
+                try:
+                    self.app.expand_all_folders()
+                except Exception:
+                    pass
             elif not self._edit_mode and self.rect().contains(ev.pos()):
                 if self.is_folder and hasattr(self, "app") and self.app:
                     try:
@@ -192,9 +202,10 @@ class WordBookButtonView(QPushButton):
             if not self._dragging and (ev.pos() - self._drag_offset).manhattanLength() > 3:
                 self._dragging = True
                 if (hasattr(self, "app") and self.app and not self.is_sub_button and
-                        hasattr(self.app, "collapse_all_folders")):
+                        hasattr(self.app, "collapse_all_folders") and not self._collapse_invoked):
                     try:
                         self.app.collapse_all_folders()
+                        self._collapse_invoked = True
                     except Exception:
                         pass
             if self._dragging:

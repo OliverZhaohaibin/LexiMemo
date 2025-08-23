@@ -501,6 +501,7 @@ class WordBookButton(QPushButton):
         self._end_press_effect()
 
         was_dragging_in_edit_mode = self.is_dragging  # is_dragging is now only true if threshold met
+        collapse_was_invoked = self._collapse_invoked
 
         # Reset dragging state and press position for next interaction
         self.is_dragging = False
@@ -540,6 +541,9 @@ class WordBookButton(QPushButton):
             # QPushButton's default mouseReleaseEvent implementation handles emitting 'clicked()'
             # if the release is within bounds.
             else:
+                if collapse_was_invoked and not self.is_sub_button and hasattr(self.app, 'expand_all_folders'):
+                    self.app.expand_all_folders()
+
                 # If it's a "new button", let the controller handle its specific click.
                 # For other buttons, the controller also connects the `clicked` signal.
                 # So, allowing super.mouseReleaseEvent() should be correct for all click types.

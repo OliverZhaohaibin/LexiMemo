@@ -1,6 +1,9 @@
 #styles.py
 # 主题颜色
 # iOS-inspired palette
+# 基础背景色
+BACKGROUND_COLOR = "#f0f0f2"
+
 PRIMARY_COLOR = "#007AFF"  # system blue
 PRIMARY_COLOR_LIGHT = "#419CFF"
 SECONDARY_COLOR = "#34C759"  # system green
@@ -71,13 +74,13 @@ LINE_EDIT_STYLE = f"""
         border: 1px solid {PRIMARY_COLOR};
     }}
 """
-SCROLL_AREA_STYLE = """
-    QScrollArea {
+SCROLL_AREA_STYLE = f"""
+    QScrollArea {{
         border: none;
-    }
-    QScrollArea > QWidget > QWidget {
-        background-color: #f0f0f0;
-    }
+    }}
+    QScrollArea > QWidget > QWidget {{
+        background-color: {BACKGROUND_COLOR};
+    }}
 """
 TAG_COMBOBOX_STYLE = """
     QComboBox {

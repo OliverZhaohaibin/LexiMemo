@@ -4,7 +4,7 @@ import os
 from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QApplication
 from UI.font import normal_font
 from PySide6.QtCore import Qt
-from UI.glass_effect import FrostedGlassMixin, with_alpha
+from UI.glass_effect import FrostedGlassMixin
 
 from UI.word_book_inside.word_list_panel import WordListPanel
 from UI.word_book_inside.word_detail_panel import WordDetailPanel
@@ -23,7 +23,8 @@ class WordBookWindow(QWidget, FrostedGlassMixin):
         self.book_color = os.path.basename(path).split("_")[2]
         self.setWindowTitle(f"单词本 - {self.book_name}")
         self.resize(1200, 800)
-        self._init_glass(color=with_alpha(self.book_color, 90), blur_radius=35, border_radius=25)
+        # keep a neutral frosted shell; front elements carry the theme color
+        self._init_glass(blur_radius=35, border_radius=25)
 
         self._build_ui()
         if target_word:

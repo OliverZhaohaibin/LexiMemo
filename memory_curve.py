@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 from UI.font import meaning_font, main_word_font, list_word_font, sentence_font, normal_font
 from UI.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE
 from services.memory_service import MemoryService
-from UI.glass_effect import FrostedGlassMixin, with_alpha
+from UI.glass_effect import FrostedGlassMixin
 
 # 艾宾浩斯遗忘曲线复习间隔（单位：天）
 MEMORY_INTERVALS = [0, 1, 2, 4, 7, 15, 30]
@@ -23,7 +23,8 @@ class MemoryCurveApp(QWidget, FrostedGlassMixin):
         self.path = os.path.dirname(os.path.abspath(sys.argv[0]))  # 使用可执行文件所在目录
         self.book_name = os.path.basename(path).split('_')[1]  # 获取单词本名称
         self.book_color = os.path.basename(path).split('_')[2]  # 获取单词本颜色
-        self._init_glass(color=with_alpha(self.book_color, 90), blur_radius=30, border_radius=25)
+        # neutral frosted background; color is used for foreground widgets
+        self._init_glass(blur_radius=30, border_radius=25)
         
         # 初始化数据
         self.current_word_index = 0

@@ -4,7 +4,12 @@ from PySide6.QtWidgets import (
     QColorDialog, QMessageBox
 )
 from PySide6.QtGui import QColor
-from UI.glass_effect import FrostedGlassMixin, with_alpha
+from UI.glass_effect import FrostedGlassMixin
+from UI.styles import (
+    LINE_EDIT_STYLE,
+    PRIMARY_BUTTON_STYLE,
+    SECONDARY_BUTTON_STYLE,
+)
 
 
 class NewWordBookDialog(QDialog, FrostedGlassMixin):
@@ -15,7 +20,8 @@ class NewWordBookDialog(QDialog, FrostedGlassMixin):
         self.setWindowTitle("新建单词本")
         self.resize(320, 150)
         self.book_color: str = "#a3d2ca"   # 默认色
-        self._init_glass(color=with_alpha(self.book_color, 90))
+        # use a neutral frosted panel – don't tint with book color
+        self._init_glass()
 
         self._build_ui()
         self.book_name: str | None = None
@@ -25,13 +31,23 @@ class NewWordBookDialog(QDialog, FrostedGlassMixin):
         lay = QVBoxLayout(self)
 
         self.name_edit = QLineEdit(placeholderText="单词本名称")
+        self.name_edit.setStyleSheet(LINE_EDIT_STYLE)
         lay.addWidget(self.name_edit)
 
         self.color_btn = QPushButton("选择颜色 (#a3d2ca)")
+        self.color_btn.setStyleSheet(
+            f"background-color: {self.book_color};"
+            "color: white; border: none; border-radius: 12px;"
+            "padding: 8px 16px; font-size: 14px;"
+        )
         self.color_btn.clicked.connect(self._choose_color)
         lay.addWidget(self.color_btn)
 
         btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        ok_btn = btns.button(QDialogButtonBox.Ok)
+        cancel_btn = btns.button(QDialogButtonBox.Cancel)
+        ok_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
+        cancel_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
         btns.accepted.connect(self._accept)
         btns.rejected.connect(self.reject)
         lay.addWidget(btns)
@@ -42,8 +58,11 @@ class NewWordBookDialog(QDialog, FrostedGlassMixin):
         if c.isValid():
             self.book_color = c.name()
             self.color_btn.setText(f"选择颜色 ({self.book_color})")
-            self.color_btn.setStyleSheet(f"background:{self.book_color}")
-            self._set_glass_color(with_alpha(self.book_color, 90))
+            self.color_btn.setStyleSheet(
+                f"background-color: {self.book_color};"
+                "color: white; border: none; border-radius: 12px;"
+                "padding: 8px 16px; font-size: 14px;"
+            )
 
     def _accept(self):
         name = self.name_edit.text().strip()

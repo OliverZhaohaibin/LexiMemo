@@ -16,15 +16,11 @@ def calculate_folder_background_rect(folder_button, sub_buttons, button_width, b
     if not folder_button.is_expanded or not sub_buttons:
         return None
     
-    # 计算包含所有子按钮的矩形区域
-    visible_sub_buttons = [btn for btn in sub_buttons if btn.isVisible()]
-    if not visible_sub_buttons:
-        return None
-        
-    min_x = min([btn.x() for btn in visible_sub_buttons])
-    min_y = min([btn.y() for btn in visible_sub_buttons])
-    max_x = max([btn.x() + button_width for btn in visible_sub_buttons])
-    max_y = max([btn.y() + button_height for btn in visible_sub_buttons])
+    # 计算包含所有子按钮的矩形区域（无论是否当前可见）
+    min_x = min(btn.x() for btn in sub_buttons)
+    min_y = min(btn.y() for btn in sub_buttons)
+    max_x = max(btn.x() + button_width for btn in sub_buttons)
+    max_y = max(btn.y() + button_height for btn in sub_buttons)
     
     # 添加边距
     margin = spacing // 2

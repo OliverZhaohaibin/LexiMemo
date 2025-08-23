@@ -388,6 +388,12 @@ class CoverController(QObject):
                     QTimer.singleShot(50, lambda b_folder=btn: [sub.start_jitter() for sub in b_folder.sub_buttons if
                                                                 b_folder.is_expanded])
 
+            # After triggering all folder expansions, force a layout refresh so every
+            # folder gets a correctly sized gray background frame (the first folder
+            # occasionally missed this without an explicit post-expand update).
+            if hasattr(self.view, "content"):
+                QTimer.singleShot(700, self.view.content.update_button_positions)
+
         else:  # Exiting edit mode
             if hasattr(self.view.content, 'collapse_all_folders'):
                 self.view.content.collapse_all_folders()  # This will animate

@@ -98,12 +98,12 @@ def update_folder_background(app, folder_button):
 
 def update_all_folder_backgrounds(app, button_width, button_height):
     """更新所有文件夹的背景框"""
-    # 先隐藏所有背景框，确保Z顺序正确
+    # 先降低所有背景框层级，确保它们处于按钮下方
     for btn in app.buttons:
-        if btn.is_folder and hasattr(btn, 'background_frame'):
+        if btn.is_folder and hasattr(btn, "background_frame"):
             btn.background_frame.lower()
-    
-    # 然后更新所有文件夹背景
+
+    # 然后逐个刷新每个文件夹的背景框
     for btn in app.buttons:
         if btn.is_folder:
             update_folder_background(app, btn)

@@ -24,11 +24,21 @@ class WordBookWindow(FadeInWindowMixin, QWidget, FrostedGlassMixin):
         self.book_color = os.path.basename(path).split("_")[2]
         self.setWindowTitle(f"单词本 - {self.book_name}")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
-        self.resize(1200, 800)
+
         # keep a neutral frosted shell; front elements carry the theme color
         self._init_glass(blur_radius=35, border_radius=25)
 
         self._build_ui()
+
+        # Ensure the window is at least large enough for its contents and
+        # avoid mismatches between the initial size and the minimum required
+        # layout size that previously led to unusable UI states.
+        hint = self.minimumSizeHint()
+        w = max(1200, hint.width())
+        h = max(800, hint.height())
+        self.setMinimumSize(w, h)
+        self.resize(w, h)
+
         if target_word:
             self._jump_to_word(target_word)
 

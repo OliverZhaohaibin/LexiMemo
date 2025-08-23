@@ -41,7 +41,6 @@ class MemoryCurveApp(FadeInWindowMixin, QWidget, FrostedGlassMixin):
     def init_ui(self):
         self.setWindowTitle(f"背单词 - {self.book_name}")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
-        self.resize(800, 600)
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -130,7 +129,14 @@ class MemoryCurveApp(FadeInWindowMixin, QWidget, FrostedGlassMixin):
         button_layout.addWidget(self.next_button)
 
         content.addLayout(button_layout)
-        
+
+        # Ensure an adequate initial size so controls are laid out properly.
+        hint = self.minimumSizeHint()
+        w = max(800, hint.width())
+        h = max(600, hint.height())
+        self.setMinimumSize(w, h)
+        self.resize(w, h)
+
         # 初始化提示相关变量
         self.current_word = ""
         self.revealed_letters = 0

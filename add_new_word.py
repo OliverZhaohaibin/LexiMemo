@@ -66,6 +66,8 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
 
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
+        self.scroll_layout.setContentsMargins(20, 20, 20, 20)
+        self.scroll_layout.setSpacing(12)
 
         outer_layout.addWidget(self.scroll_area)
 
@@ -95,6 +97,7 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
         self.remove_related_button.setStyleSheet(RED_BUTTON_STYLE) # 减号按钮样式
         self.remove_related_button.clicked.connect(self.remove_related_input_row)
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(8)
         button_layout.addWidget(self.add_related_button)
         button_layout.addWidget(self.remove_related_button)
         self.scroll_layout.addLayout(self.related_layout)
@@ -120,6 +123,7 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
         self.remove_meaning_button.clicked.connect(self.remove_meaning_example_row)
         self.meaning_example_layout.addLayout(self.meaning_example_grid)
         self.meaning_button_layout = QHBoxLayout()
+        self.meaning_button_layout.setSpacing(8)
         self.meaning_button_layout.addWidget(self.add_meaning_button)
         self.meaning_button_layout.addWidget(self.remove_meaning_button)
         self.meaning_example_layout.addLayout(self.meaning_button_layout)
@@ -155,6 +159,7 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
 
         # 保存和取消按钮
         self.button_layout = QHBoxLayout()
+        self.button_layout.setSpacing(8)
         self.save_button = QPushButton("保存")
         self.cancel_button = QPushButton("取消")
         self.cancel_button.setStyleSheet(RED_BUTTON_STYLE)  # 取消按钮样式

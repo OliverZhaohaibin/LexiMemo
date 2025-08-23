@@ -38,6 +38,7 @@ class NewWordBookDialog(FadeInWindowMixin, FrostedGlassMixin, QDialog):
 
         lay = QVBoxLayout()
         lay.setContentsMargins(20, 20, 20, 20)
+        lay.setSpacing(12)
         root.addLayout(lay)
 
         self.name_edit = QLineEdit(placeholderText="单词本名称")

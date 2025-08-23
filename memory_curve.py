@@ -48,6 +48,8 @@ class MemoryCurveApp(FadeInWindowMixin, FrostedGlassMixin, QWidget):
         main_layout.addWidget(TitleBar(self, self.windowTitle()))
 
         content = QVBoxLayout()
+        content.setContentsMargins(20, 20, 20, 20)
+        content.setSpacing(12)
         main_layout.addLayout(content)
 
         # 顶部信息栏
@@ -80,6 +82,7 @@ class MemoryCurveApp(FadeInWindowMixin, FrostedGlassMixin, QWidget):
         
         # 输入区域
         input_layout = QHBoxLayout()
+        input_layout.setSpacing(8)
         self.word_input = QLineEdit()
         self.word_input.setPlaceholderText("请输入单词")
         self.word_input.setFont(list_word_font)
@@ -111,6 +114,7 @@ class MemoryCurveApp(FadeInWindowMixin, FrostedGlassMixin, QWidget):
         
         # 按钮区域
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(8)
 
         self.hint_button = QPushButton("提示")
         self.hint_button.setStyleSheet(SECONDARY_BUTTON_STYLE)

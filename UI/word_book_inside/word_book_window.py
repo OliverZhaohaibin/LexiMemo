@@ -60,6 +60,11 @@ class WordBookWindow(FadeInWindowMixin, FrostedGlassMixin, QWidget):
         self._title_bar = TitleBar(self, f"单词本 - {self.book_name}")
         lay.addWidget(self._title_bar)
 
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(20, 20, 20, 20)
+        container_layout.setSpacing(12)
+
         self.split = QSplitter(Qt.Horizontal)
         self.list_panel = WordListPanel(self.book_name, self.book_color)
         self.list_panel.word_selected.connect(self._on_word_selected)
@@ -72,7 +77,9 @@ class WordBookWindow(FadeInWindowMixin, FrostedGlassMixin, QWidget):
         self.detail_panel.related_clicked.connect(self._jump_to_word)
         self.split.addWidget(self.detail_panel)
         self.split.setSizes([350, 850])
-        lay.addWidget(self.split)
+        container_layout.addWidget(self.split)
+
+        lay.addWidget(container)
 
         self._current_word: Word | None = None
         self._dlg_add = None  # 保留对话框引用，避免被 GC

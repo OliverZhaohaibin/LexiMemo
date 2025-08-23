@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import os
-from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QApplication
+from PySide6.QtWidgets import (
+    QSplitter,
+    QWidget,
+    QVBoxLayout,
+    QApplication,
+    QSizeGrip,
+)
 from UI.font import normal_font
 from PySide6.QtCore import Qt
 from UI.glass_effect import FrostedGlassMixin, FadeInWindowMixin
@@ -29,6 +35,10 @@ class WordBookWindow(FadeInWindowMixin, QWidget, FrostedGlassMixin):
         self._init_glass(blur_radius=35, border_radius=25)
 
         self._build_ui()
+
+        # allow resizing by exposing a size grip on the bottom-right corner
+        self._size_grip = QSizeGrip(self)
+        self._size_grip.setFixedSize(16, 16)
 
         # Ensure the window is at least large enough for its contents and
         # avoid mismatches between the initial size and the minimum required
@@ -116,6 +126,14 @@ class WordBookWindow(FadeInWindowMixin, QWidget, FrostedGlassMixin):
             if w.text.strip().lower() == str(word_name).strip().lower():
                 self._on_word_selected(w)
                 break
+
+    # ------------------------------------------------------------------
+    def resizeEvent(self, event):  # type: ignore[override]
+        super().resizeEvent(event)
+        self._size_grip.move(
+            self.width() - self._size_grip.width(),
+            self.height() - self._size_grip.height(),
+        )
 
 
 if __name__ == "__main__":

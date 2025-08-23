@@ -2,8 +2,21 @@
 import sys
 import os
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QLineEdit, QLabel, QPushButton, QHBoxLayout, QMessageBox,
-    QInputDialog, QGridLayout, QFrame, QTextEdit, QScrollArea, QCheckBox
+    QApplication,
+    QWidget,
+    QVBoxLayout,
+    QLineEdit,
+    QLabel,
+    QPushButton,
+    QHBoxLayout,
+    QMessageBox,
+    QInputDialog,
+    QGridLayout,
+    QFrame,
+    QTextEdit,
+    QScrollArea,
+    QCheckBox,
+    QSizeGrip,
 )
 from UI.font import normal_font
 from PySide6.QtCore import Signal
@@ -30,6 +43,10 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
 
         self.setWindowTitle("新单词")
         self.resize(800, 700)
+
+        # expose a grip to allow manual resizing when the system frame is absent
+        self._size_grip = QSizeGrip(self)
+        self._size_grip.setFixedSize(16, 16)
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
@@ -139,6 +156,15 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
         self.scroll_area.setWidget(self.scroll_content)
         self.layout.addWidget(self.scroll_area)
         self.setLayout(self.layout)
+
+    # ---------------------------------------------------------------
+    def resizeEvent(self, event):  # type: ignore[override]
+        super().resizeEvent(event)
+        if hasattr(self, "_size_grip"):
+            self._size_grip.move(
+                self.width() - self._size_grip.width(),
+                self.height() - self._size_grip.height(),
+            )
 
     def add_meaning_example_pair(self, row):
         """

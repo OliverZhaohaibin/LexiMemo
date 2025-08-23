@@ -524,30 +524,33 @@ class FolderAnimationMixin:
     ):
         # self refers to CoverContent
         bw, bh, sp = self.button_width, self.button_height, self.spacing
-        # Layout should rely on the current viewport width. Using scroll_content's
-        # width can cause temporary miscalculations when its size hasn't updated
-        # yet, leading to buttons squeezing into a single row.
         avail_w = self.scroll_area.viewport().width()
-        x, y = sp, sp + (getattr(self, "top_margin", 40) or 40)
-        final_pos: Dict['WordBookButton', QPoint] = {}  # Use actual button type if available
+        top_margin = getattr(self, "top_margin", 40) or 40
+        final_pos: Dict['WordBookButton', QPoint] = {}
 
         buttons_for_layout = []
         if hasattr(self, 'buttons'):
             buttons_for_layout = self.buttons
 
-        # Include trailing spacing so an extra button can fit when there's just
-        # enough room, avoiding premature fallback to a single column.
         buttons_per_row = max(1, (avail_w + sp) // (bw + sp))
+        total_main = sum(1 for b in buttons_for_layout if not getattr(b, 'is_sub_button', False))
+
+        def row_left_offset(remaining: int) -> int:
+            row_cnt = max(1, min(buttons_per_row, remaining))
+            row_w = row_cnt * bw + (row_cnt - 1) * sp
+            return max(sp, (avail_w - row_w) // 2)
+
+        x = row_left_offset(total_main)
+        y = sp + top_margin
         main_button_idx = 0
 
         skip_set = set(skip_buttons) if skip_buttons else set()
 
         for btn in buttons_for_layout:
-            if btn in skip_set or getattr(btn, "is_dragging", False):
-                # Reserve a slot but keep current position for dragged/skipped buttons
+            if btn in skip_set or getattr(btn, 'is_dragging', False):
                 if main_button_idx > 0 and main_button_idx % buttons_per_row == 0:
                     y += bh + sp
-                    x = sp
+                    x = row_left_offset(total_main - main_button_idx)
                 final_pos[btn] = btn.pos()
                 x += bw + sp
                 main_button_idx += 1
@@ -555,60 +558,53 @@ class FolderAnimationMixin:
 
             if main_button_idx > 0 and main_button_idx % buttons_per_row == 0:
                 y += bh + sp
-                x = sp
+                x = row_left_offset(total_main - main_button_idx)
             final_pos[btn] = QPoint(x, y)
 
-            # Determine if this folder (btn) will be expanded in the final layout
             is_this_folder_expanded_in_final_state = False
             if hasattr(btn, 'is_folder') and btn.is_folder:
                 if btn is folder_button_being_toggled:
                     is_this_folder_expanded_in_final_state = is_expanding_current_folder
-                elif hasattr(btn, 'is_expanded') and btn.is_expanded:  # Another folder that remains expanded
+                elif hasattr(btn, 'is_expanded') and btn.is_expanded:
                     is_this_folder_expanded_in_final_state = True
 
             if is_this_folder_expanded_in_final_state:
-                y += bh + sp  # Space for folder button itself, sub-buttons start below
-                sub_x = sp  # Sub-buttons start from the left, using normal spacing for first item
-
-                fsp = sp * 1.5  # Folder internal spacing for subsequent items in a row
-                # 同样在子按钮排布时考虑尾部空隙，避免宽度充足时仍挤成一列
-                sub_buttons_per_row = max(
-                    1,
-                    int((avail_w + fsp) // (bw + fsp)),
-                )
-
+                y += bh + sp
+                sub_x = sp
+                fsp = sp * 1.5
+                sub_buttons_per_row = max(1, int((avail_w + fsp) // (bw + fsp)))
                 for idx, sub_btn in enumerate(btn.sub_buttons):
                     if idx > 0 and idx % sub_buttons_per_row == 0:
-                        y += bh + fsp  # Move to next row for sub-buttons
+                        y += bh + fsp
                         sub_x = sp
-
-                    if sub_btn in skip_set or getattr(sub_btn, "is_dragging", False):
-                        # Keep current position but still advance slot
+                    if sub_btn in skip_set or getattr(sub_btn, 'is_dragging', False):
                         final_pos[sub_btn] = sub_btn.pos()
                         sub_x += (bw + fsp)
                         continue
-
                     final_pos[sub_btn] = QPoint(sub_x, y)
                     sub_x += (bw + fsp)
-
-                if btn.sub_buttons:  # If there were sub-buttons, add space after them
-                    y += bh + sp  # Use normal spacing after the block of sub-buttons
-                x = sp  # Next main button starts from left
-                main_button_idx = -1  # Reset column counter for main buttons
-            else:  # Normal button or collapsed folder
+                if btn.sub_buttons:
+                    y += bh + sp
+                x = row_left_offset(total_main - (main_button_idx + 1))
+                main_button_idx = -1
+            else:
                 x += bw + sp
 
             main_button_idx += 1
 
-        new_book_target = QPoint(0, 0)  # Default
+        new_book_target = QPoint(0, 0)
         if hasattr(self, 'new_book_button') and self.new_book_button not in skip_set:
             if main_button_idx > 0 and main_button_idx % buttons_per_row == 0:
                 y += bh + sp
-                x = sp
-            elif not buttons_for_layout:  # No main buttons, new_book_button is first
-                x = sp
-                y = sp + (getattr(self, "top_margin", 40) or 40)
-
+                x = row_left_offset(1)
+            elif not buttons_for_layout:
+                x = row_left_offset(1)
+                y = sp + top_margin
+            else:
+                remaining = main_button_idx % buttons_per_row
+                row_cnt = remaining + 1
+                left = row_left_offset(row_cnt)
+                x = left + remaining * (bw + sp)
             new_book_target = QPoint(x, y)
         elif hasattr(self, 'new_book_button'):
             new_book_target = self.new_book_button.pos()

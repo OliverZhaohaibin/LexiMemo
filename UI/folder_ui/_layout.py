@@ -20,28 +20,40 @@ def calculate_main_button_positions(
     计算主界面按钮的位置
     """
     target_positions = []
-    current_x = spacing
     current_y = spacing + top_margin
 
-    main_buttons_for_layout = [btn for btn in buttons if
-                               not btn.is_sub_button and not getattr(btn, 'is_new_button', False)]
+    main_buttons_for_layout = [
+        btn for btn in buttons
+        if not btn.is_sub_button and not getattr(btn, 'is_new_button', False)
+    ]
 
     # Include the trailing spacing when calculating how many buttons fit per row.
     # This prevents the layout from falling back to a single column when there is
     # still enough room for an additional button plus its spacing.
     buttons_per_row = max(1, (central_widget_width + spacing) // (button_width + spacing))
 
+    total_main = len(main_buttons_for_layout)
+
+    def row_gap(remaining: int) -> int:
+        row_cnt = max(1, min(buttons_per_row, remaining))
+        gap = (central_widget_width - row_cnt * button_width) // (row_cnt + 1)
+        return max(spacing, gap)
+
+    gap = row_gap(total_main)
+    current_x = gap
     idx = 0
+
     for btn in buttons:
         if btn.is_sub_button or getattr(btn, 'is_new_button', False):
             continue
 
         if idx > 0 and idx % buttons_per_row == 0:
             current_y += button_height + spacing
-            current_x = spacing
+            gap = row_gap(total_main - idx)
+            current_x = gap
 
         target_positions.append(QPoint(current_x, current_y))
-        current_x += button_width + spacing
+        current_x += button_width + gap
         idx += 1
 
     return target_positions

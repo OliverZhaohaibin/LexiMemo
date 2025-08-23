@@ -535,12 +535,13 @@ class FolderAnimationMixin:
         buttons_per_row = max(1, (avail_w + sp) // (bw + sp))
         total_main = sum(1 for b in buttons_for_layout if not getattr(b, 'is_sub_button', False))
 
-        def row_left_offset(remaining: int) -> int:
+        def row_gap(remaining: int) -> int:
             row_cnt = max(1, min(buttons_per_row, remaining))
-            row_w = row_cnt * bw + (row_cnt - 1) * sp
-            return max(sp, (avail_w - row_w) // 2)
+            gap = (avail_w - row_cnt * bw) // (row_cnt + 1)
+            return max(sp, gap)
 
-        x = row_left_offset(total_main)
+        gap = row_gap(total_main)
+        x = gap
         y = sp + top_margin
         main_button_idx = 0
 
@@ -550,15 +551,17 @@ class FolderAnimationMixin:
             if btn in skip_set or getattr(btn, 'is_dragging', False):
                 if main_button_idx > 0 and main_button_idx % buttons_per_row == 0:
                     y += bh + sp
-                    x = row_left_offset(total_main - main_button_idx)
+                    gap = row_gap(total_main - main_button_idx)
+                    x = gap
                 final_pos[btn] = btn.pos()
-                x += bw + sp
+                x += bw + gap
                 main_button_idx += 1
                 continue
 
             if main_button_idx > 0 and main_button_idx % buttons_per_row == 0:
                 y += bh + sp
-                x = row_left_offset(total_main - main_button_idx)
+                gap = row_gap(total_main - main_button_idx)
+                x = gap
             final_pos[btn] = QPoint(x, y)
 
             is_this_folder_expanded_in_final_state = False
@@ -585,10 +588,11 @@ class FolderAnimationMixin:
                     sub_x += (bw + fsp)
                 if btn.sub_buttons:
                     y += bh + sp
-                x = row_left_offset(total_main - (main_button_idx + 1))
+                gap = row_gap(total_main - (main_button_idx + 1))
+                x = gap
                 main_button_idx = -1
             else:
-                x += bw + sp
+                x += bw + gap
 
             main_button_idx += 1
 
@@ -596,15 +600,17 @@ class FolderAnimationMixin:
         if hasattr(self, 'new_book_button') and self.new_book_button not in skip_set:
             if main_button_idx > 0 and main_button_idx % buttons_per_row == 0:
                 y += bh + sp
-                x = row_left_offset(1)
+                gap = row_gap(1)
+                x = gap
             elif not buttons_for_layout:
-                x = row_left_offset(1)
+                gap = row_gap(1)
+                x = gap
                 y = sp + top_margin
             else:
                 remaining = main_button_idx % buttons_per_row
                 row_cnt = remaining + 1
-                left = row_left_offset(row_cnt)
-                x = left + remaining * (bw + sp)
+                gap = row_gap(row_cnt)
+                x = gap + remaining * (bw + gap)
             new_book_target = QPoint(x, y)
         elif hasattr(self, 'new_book_button'):
             new_book_target = self.new_book_button.pos()

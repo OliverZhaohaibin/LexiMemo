@@ -265,7 +265,7 @@ class DraggableButton(QPushButton):
         else:
             # 主界面按钮执行原有的靠近检测和排序
             self.app.check_button_proximity(self)
-            self.app.update_button_order(self, realtime=True)
+            self.app.update_button_order(self)
 
     def mouseReleaseEvent(self, event):
         """

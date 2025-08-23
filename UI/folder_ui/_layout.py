@@ -183,9 +183,11 @@ class FolderLayoutMixin:
         # ---------- 4) 更新文件夹背景框 ----------
         update_all_folder_backgrounds(self, bw, bh)
 
-    def update_button_order(self, dragged_button: 'WordBookButton', realtime: bool = False):
+    def update_button_order(self, dragged_button: 'WordBookButton'):
         if dragged_button.is_sub_button or not hasattr(self, "buttons"):
             return
+
+        other_buttons = [b for b in self.buttons if b is not dragged_button and not getattr(b, 'is_new_button', False)]
 
         all_main_buttons = [b for b in self.buttons if not b.is_sub_button and not getattr(b, 'is_new_button', False)]
 
@@ -193,12 +195,9 @@ class FolderLayoutMixin:
             all_main_buttons, self.button_width, self.button_height,
             self.spacing, self.scroll_content.width(), getattr(self, "top_margin", 40)
         )
-        if not targets:
-            return
+        if not targets: return
 
         dragged_center = dragged_button.pos() + QPoint(self.button_width // 2, self.button_height // 2)
-        original_index = all_main_buttons.index(dragged_button)
-        original_center = targets[original_index] + QPoint(self.button_width // 2, self.button_height // 2)
 
         closest_slot_index = 0
         min_dist = float('inf')
@@ -212,13 +211,6 @@ class FolderLayoutMixin:
             if dist < min_dist:
                 min_dist = dist
                 closest_slot_index = i
-
-        # Only reorder if the dragged button has moved far enough from its original slot
-        threshold_x = (self.button_width + self.spacing) // 2
-        threshold_y = (self.button_height + self.spacing) // 2
-        if (abs(dragged_center.x() - original_center.x()) <= threshold_x and
-                abs(dragged_center.y() - original_center.y()) <= threshold_y):
-            closest_slot_index = original_index
 
         if dragged_button in self.buttons:
             self.buttons.remove(dragged_button)
@@ -240,10 +232,9 @@ class FolderLayoutMixin:
 
         self.buttons = new_main_buttons_order
 
-        duration = 100 if realtime else 0
-        self.animate_button_positions(dragged_button, duration)
+        self.animate_button_positions(dragged_button)
 
-    def animate_button_positions(self, dragged_button: Optional['WordBookButton'] = None, duration: int = 100):
+    def animate_button_positions(self, dragged_button: Optional['WordBookButton'] = None):
         all_main_buttons = [b for b in self.buttons if not b.is_sub_button and not getattr(b, 'is_new_button', False)]
 
         targets = calculate_main_button_positions(
@@ -252,19 +243,9 @@ class FolderLayoutMixin:
             self.scroll_content.width(), getattr(self, "top_margin", 40)
         )
 
-        if duration <= 0:
-            for i, btn in enumerate(all_main_buttons):
-                if i < len(targets) and btn is not dragged_button and not getattr(btn, "is_dragging", False):
-                    btn.move(targets[i])
-        else:
-            from ._animations import create_button_position_animation
-            anim_group = QParallelAnimationGroup(self)
-            for i, btn in enumerate(all_main_buttons):
-                if (i < len(targets) and btn is not dragged_button and
-                        not getattr(btn, "is_dragging", False) and btn.pos() != targets[i]):
-                    anim = create_button_position_animation(btn, targets[i], duration=duration)
-                    anim_group.addAnimation(anim)
-            # Start animations after handling new_book_button
+        for i, btn in enumerate(all_main_buttons):
+            if i < len(targets) and btn is not dragged_button and not getattr(btn, "is_dragging", False):
+                btn.move(targets[i])
 
         current_x = self.spacing
         current_y = self.spacing + getattr(self, "top_margin", 40)
@@ -288,18 +269,12 @@ class FolderLayoutMixin:
                 current_y += bh + sp
                 current_x = sp
 
-            if duration <= 0:
-                if not getattr(self.new_book_button, "is_dragging", False):
-                    self.new_book_button.move(QPoint(current_x, current_y))
-            else:
-                if (not getattr(self.new_book_button, "is_dragging", False) and
-                        self.new_book_button.pos() != QPoint(current_x, current_y)):
-                    anim = create_button_position_animation(self.new_book_button, QPoint(current_x, current_y),
-                                                            duration=duration)
-                    anim_group.addAnimation(anim)
-
-        if duration > 0 and 'anim_group' in locals():
-            anim_group.start()
+            if not getattr(self.new_book_button, "is_dragging", False) and \
+                    self.new_book_button.pos() != QPoint(current_x, current_y):
+                from ._animations import create_button_position_animation
+                anim = create_button_position_animation(self.new_book_button, QPoint(current_x, current_y),
+                                                        duration=100)
+                anim.start()
 
     def finalize_button_order(self):
         all_main_buttons = [b for b in self.buttons if not b.is_sub_button and not getattr(b, 'is_new_button', False)]

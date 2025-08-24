@@ -46,10 +46,11 @@ class NewWordBookDialog(FadeInWindowMixin, FrostedGlassMixin, QDialog):
         lay.addWidget(self.name_edit)
 
         self.color_btn = QPushButton("选择颜色 (#a3d2ca)")
+        # setStyleSheet accepts a single string; join all rules into one
         self.color_btn.setStyleSheet(
-            f"background-color: {self.book_color};",
-            "color: white; border: none; border-radius: 12px;",
-            "padding: 8px 16px; font-size: 14px;",
+            f"background-color: {self.book_color}; "
+            "color: white; border: none; border-radius: 12px; "
+            "padding: 8px 16px; font-size: 14px;"
         )
         self.color_btn.clicked.connect(self._choose_color)
         lay.addWidget(self.color_btn)
@@ -70,9 +71,9 @@ class NewWordBookDialog(FadeInWindowMixin, FrostedGlassMixin, QDialog):
             self.book_color = c.name()
             self.color_btn.setText(f"选择颜色 ({self.book_color})")
             self.color_btn.setStyleSheet(
-                f"background-color: {self.book_color};",
-                "color: white; border: none; border-radius: 12px;",
-                "padding: 8px 16px; font-size: 14px;",
+                f"background-color: {self.book_color}; "
+                "color: white; border: none; border-radius: 12px; "
+                "padding: 8px 16px; font-size: 14px;"
             )
 
     def _accept(self):

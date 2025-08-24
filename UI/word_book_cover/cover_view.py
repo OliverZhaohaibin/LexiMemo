@@ -75,8 +75,9 @@ class CoverView(FrostedGlassMixin, QWidget):
         )
         self.empty_hint.setAlignment(Qt.AlignCenter)
 
-        # ========= ④ 内层卡片 =========
-        self.card = QWidget(objectName="card")
+        # ========= ④ 内层容器 =========
+        self.card = QWidget()
+        self.card.setAttribute(Qt.WA_TranslucentBackground, True)
         card_layout = QVBoxLayout(self.card)
         card_layout.setContentsMargins(16, 16, 16, 16)
         card_layout.setSpacing(8)
@@ -89,16 +90,6 @@ class CoverView(FrostedGlassMixin, QWidget):
         root.setSpacing(8)
         root.addWidget(self.titlebar)
         root.addWidget(self.card, 1)
-
-        # ========= ⑥ 样式 =========
-        self.setStyleSheet(
-            """
-        #card{
-            background: rgba(245,245,247,0.92);
-            border-radius: 16px;
-        }
-        """
-        )
 
         # ========= ⑦ 下拉建议列表 =========
         self.suggestions_list = QListWidget()

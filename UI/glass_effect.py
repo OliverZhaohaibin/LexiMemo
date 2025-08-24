@@ -1,7 +1,14 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QRectF, QPropertyAnimation
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QBitmap
+from PySide6.QtCore import Qt, QRectF, QPropertyAnimation, QSize
+from PySide6.QtGui import (
+    QColor,
+    QPainter,
+    QPainterPath,
+    QBitmap,
+    QImage,
+    QPixmap,
+)
 from PySide6.QtWidgets import (
     QFrame,
     QPushButton,
@@ -47,16 +54,25 @@ def _r2_path(rect: QRectF, radius: float) -> QPainterPath:
     return path
 
 
+def _feathered_mask(size: QSize, radius: int, scale: int = 4) -> QBitmap:
+    """Return an anti-aliased mask for an R2-rounded rect using oversampling."""
+    w, h = size.width() * scale, size.height() * scale
+    image = QImage(w, h, QImage.Format_ARGB32)
+    image.fill(Qt.transparent)
+    painter = QPainter(image)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setRenderHint(QPainter.HighQualityAntialiasing)
+    path = _r2_path(QRectF(0, 0, w, h), radius * scale)
+    painter.fillPath(path, Qt.white)
+    painter.end()
+    pix = QPixmap.fromImage(image)
+    pix = pix.scaled(size, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+    return pix.mask()
+
+
 def apply_r2_mask(widget, radius: int) -> None:
     """Clip ``widget`` to an R2-continuous rounded rectangle mask."""
-    mask = QBitmap(widget.size())
-    mask.fill(Qt.color0)
-    painter = QPainter(mask)
-    painter.setRenderHint(QPainter.Antialiasing)
-    path = _r2_path(QRectF(mask.rect()), radius)
-    painter.fillPath(path, Qt.color1)
-    painter.end()
-    widget.setMask(mask)
+    widget.setMask(_feathered_mask(widget.size(), radius))
 
 
 class _R2Frame(QFrame):
@@ -169,16 +185,7 @@ class FrostedGlassMixin:
         if getattr(self, "_glass_radius", 0) <= 0:
             self.clearMask()
             return
-        mask = QBitmap(self.size())
-        mask.fill(Qt.color0)
-        painter = QPainter(mask)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(Qt.color1)
-        painter.setPen(Qt.NoPen)
-        path = _r2_path(QRectF(mask.rect()), self._glass_radius)
-        painter.drawPath(path)
-        painter.end()
-        self.setMask(mask)
+        self.setMask(_feathered_mask(self.size(), self._glass_radius))
 
 
 class FadeInWindowMixin:

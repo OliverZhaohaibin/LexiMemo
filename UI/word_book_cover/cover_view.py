@@ -33,7 +33,10 @@ class CoverView(FrostedGlassMixin, QWidget):
         # shape as other windows
         self._init_glass(blur_radius=0, border_radius=25)
 
-        # ========= ① 头部 =========
+        # ========= ① 标题栏 =========
+        self.titlebar = TitleBar(self, "背单词程序")
+
+        # ========= ② 头部 =========
         self.edit_btn = QPushButton("编辑")
         self.edit_btn.setFixedSize(60, 30)
         self.edit_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
@@ -45,26 +48,20 @@ class CoverView(FrostedGlassMixin, QWidget):
         self.search_bar.installEventFilter(self)
 
         head = QHBoxLayout()
-        # Leave breathing room around the controls so they don't get clipped
-        # by the window's rounded mask. This offsets them from the curved
-        # corners and top title bar, fixing the truncated "编辑" button seen
-        # when margins were zero.
-        head.setContentsMargins(16, 8, 16, 8)
+        head.setContentsMargins(0, 0, 0, 0)
         head.setSpacing(10)
         head.addWidget(self.edit_btn)
         head.addWidget(self.search_bar, 1)
 
-        # ========= ② ScrollArea =========
+        # ========= ③ ScrollArea =========
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        # keep the scroll area transparent so the frosted background is
-        # visible through it
+        self.scroll_area.setFrameShape(QScrollArea.NoFrame)
         self.scroll_area.setStyleSheet(
             "QScrollArea{background:transparent;border:none;}"
             "QScrollArea> QWidget> QWidget{background:transparent;}"
         )
-
-        self.scroll_area.setViewportMargins(16, 0, 16, 16)
+        self.scroll_area.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
 
         # ⭐ 改用 CoverContent（自带文件夹功能）
         self.content = CoverContent(self.scroll_area)
@@ -72,18 +69,38 @@ class CoverView(FrostedGlassMixin, QWidget):
         self.scroll_area.setWidget(self.content)
 
         # —— 初次启动提示 —— #
-        self.empty_hint = QLabel("还没有单词本，点击下面的『新建单词本』按钮开始吧！", self.content)
+        self.empty_hint = QLabel(
+            "还没有单词本，点击下面的『新建单词本』按钮开始吧！",
+            self.content,
+        )
         self.empty_hint.setAlignment(Qt.AlignCenter)
 
-        # ========= ③ 根布局 =========
+        # ========= ④ 内层卡片 =========
+        self.card = QWidget(objectName="card")
+        card_layout = QVBoxLayout(self.card)
+        card_layout.setContentsMargins(16, 16, 16, 16)
+        card_layout.setSpacing(8)
+        card_layout.addLayout(head)
+        card_layout.addWidget(self.scroll_area)
+
+        # ========= ⑤ 根布局 =========
         root = QVBoxLayout(self)
         root.setContentsMargins(12, 12, 12, 12)
-        root.setSpacing(0)
-        root.addWidget(TitleBar(self, "背单词程序"))
-        root.addLayout(head)
-        root.addWidget(self.scroll_area)
+        root.setSpacing(8)
+        root.addWidget(self.titlebar)
+        root.addWidget(self.card, 1)
 
-        # ========= ④ 下拉建议列表 =========
+        # ========= ⑥ 样式 =========
+        self.setStyleSheet(
+            """
+        #card{
+            background: rgba(245,245,247,0.92);
+            border-radius: 16px;
+        }
+        """
+        )
+
+        # ========= ⑦ 下拉建议列表 =========
         self.suggestions_list = QListWidget()
         self.suggestions_list.setWindowFlags(
             Qt.FramelessWindowHint
@@ -96,7 +113,7 @@ class CoverView(FrostedGlassMixin, QWidget):
         self.suggestions_list.hide()
         self.suppress_suggestions_once = False
 
-        # ========= ⑤ 信号外发 =========
+        # ========= ⑧ 信号外发 =========
         self.edit_btn.clicked.connect(self._toggle_edit)
         self.search_bar.textChanged.connect(self.searchTextChanged)
 

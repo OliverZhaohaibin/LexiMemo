@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import math
-
 from PySide6.QtCore import Qt, QRectF, QPropertyAnimation
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QRegion
 from PySide6.QtWidgets import (
@@ -18,50 +16,13 @@ def with_alpha(color: str, alpha: int) -> QColor:
     c = QColor(color)
     c.setAlpha(alpha)
     return c
-
-
-def _add_r2_corner(
-    path: QPainterPath,
-    cx: float,
-    cy: float,
-    radius: float,
-    start_angle: float,
-    steps: int = 16,
-    power: int = 4,
-) -> None:
-    """Append a quarter superellipse (R2 continuous) corner to ``path``.
-
-    ``start_angle`` is given in degrees for orientation: 0° = top-right,
-    90° = bottom-right, etc.
-    """
-
-    angle = math.radians(start_angle)
-    for i in range(1, steps + 1):
-        t = (i / steps) * (math.pi / 2)
-        x = radius * (math.sin(t) ** (2 / power))
-        y = -radius * (math.cos(t) ** (2 / power))
-        xr = x * math.cos(angle) - y * math.sin(angle)
-        yr = x * math.sin(angle) + y * math.cos(angle)
-        path.lineTo(cx + xr, cy + yr)
-
-
 def _r2_path(rect: QRectF, radius: float) -> QPainterPath:
-    """Create a rounded-rectangle path with R2 continuous corners."""
+    """Create a rounded-rectangle path without corner artifacts."""
 
-    w, h = rect.width(), rect.height()
-    r = min(radius, w / 2, h / 2)
-    p = QPainterPath()
-    p.moveTo(r, 0)
-    p.lineTo(w - r, 0)
-    _add_r2_corner(p, w - r, r, r, 0)
-    p.lineTo(w, h - r)
-    _add_r2_corner(p, w - r, h - r, r, 90)
-    p.lineTo(r, h)
-    _add_r2_corner(p, r, h - r, r, 180)
-    p.lineTo(0, r)
-    _add_r2_corner(p, r, r, r, 270)
-    p.closeSubpath()
-    return p
+    r = min(radius, rect.width() / 2, rect.height() / 2)
+    path = QPainterPath()
+    path.addRoundedRect(rect, r, r)
+    return path
 
 
 class _R2Frame(QFrame):

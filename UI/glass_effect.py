@@ -61,7 +61,9 @@ def _feathered_mask(size: QSize, radius: int, scale: int = 4) -> QBitmap:
     image.fill(Qt.transparent)
     painter = QPainter(image)
     painter.setRenderHint(QPainter.Antialiasing)
-    painter.setRenderHint(QPainter.HighQualityAntialiasing)
+    hq_hint = getattr(QPainter, "HighQualityAntialiasing", None)
+    if hq_hint is not None:
+        painter.setRenderHint(hq_hint)
     path = _r2_path(QRectF(0, 0, w, h), radius * scale)
     painter.fillPath(path, Qt.white)
     painter.end()

@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
-from UI.glass_effect import FrostedGlassMixin, FadeInWindowMixin
+from UI.glass_effect import FrostedGlassMixin
 from UI.styles import (
     LINE_EDIT_STYLE,
     PRIMARY_BUTTON_STYLE,
@@ -14,7 +14,7 @@ from UI.styles import (
 from UI.title_bar import TitleBar
 
 
-class NewWordBookDialog(FadeInWindowMixin, FrostedGlassMixin, QDialog):
+class NewWordBookDialog(FrostedGlassMixin, QDialog):
     """输入『名称 + 颜色』的简单对话框"""
 
     def __init__(self, parent=None):

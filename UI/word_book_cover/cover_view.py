@@ -15,7 +15,7 @@ from UI.styles import (
     BACKGROUND_COLOR,
 )
 from UI.title_bar import TitleBar
-from UI.glass_effect import FrostedGlassMixin, with_alpha
+from UI.glass_effect import FrostedGlassMixin
 
 
 class CoverView(FrostedGlassMixin, QWidget):
@@ -37,7 +37,7 @@ class CoverView(FrostedGlassMixin, QWidget):
         # apply a rounded R2 mask so the main view uses the same soft card
         # shape as other windows
         self._init_glass(
-            color=with_alpha(BACKGROUND_COLOR, 200),
+            color=BACKGROUND_COLOR,
             blur_radius=30,
             border_radius=25,
         )

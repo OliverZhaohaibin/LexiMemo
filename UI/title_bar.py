@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 from UI.styles import BACKGROUND_COLOR
+from UI.glass_effect import apply_r2_mask
 
 
 class TitleBar(QFrame):
@@ -41,21 +42,27 @@ class TitleBar(QFrame):
         self._min_btn = QToolButton(self)
         self._min_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMinButton))
         self._min_btn.setCursor(Qt.PointingHandCursor)
-        self._min_btn.clicked.connect(parent.showMinimized)
+        self._min_btn.setFixedSize(36, 24)
         layout.addWidget(self._min_btn)
+        apply_r2_mask(self._min_btn, 4)
+        self._min_btn.clicked.connect(parent.showMinimized)
 
         self._max_btn = QToolButton(self)
         self._max_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMaxButton))
         self._max_btn.setCursor(Qt.PointingHandCursor)
-        self._max_btn.clicked.connect(self._toggle_max)
+        self._max_btn.setFixedSize(36, 24)
         layout.addWidget(self._max_btn)
+        apply_r2_mask(self._max_btn, 4)
+        self._max_btn.clicked.connect(self._toggle_max)
 
         self._close_btn = QToolButton(self)
         self._close_btn.setObjectName("closeButton")
         self._close_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarCloseButton))
         self._close_btn.setCursor(Qt.PointingHandCursor)
-        self._close_btn.clicked.connect(parent.close)
+        self._close_btn.setFixedSize(36, 24)
         layout.addWidget(self._close_btn)
+        apply_r2_mask(self._close_btn, 4)
+        self._close_btn.clicked.connect(parent.close)
 
         self._drag_pos: QPoint | None = None
 

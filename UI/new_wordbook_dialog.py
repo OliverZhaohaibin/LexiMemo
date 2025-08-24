@@ -1,11 +1,11 @@
 # UI/new_wordbook_dialog.py
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QLineEdit, QPushButton, QDialogButtonBox,
+    QDialog, QVBoxLayout, QLineEdit, QDialogButtonBox,
     QColorDialog, QMessageBox
 )
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
-from UI.glass_effect import FrostedGlassMixin
+from UI.glass_effect import FrostedGlassMixin, R2PushButton, apply_r2_mask
 from UI.styles import (
     LINE_EDIT_STYLE,
     PRIMARY_BUTTON_STYLE,
@@ -45,7 +45,7 @@ class NewWordBookDialog(FrostedGlassMixin, QDialog):
         self.name_edit.setStyleSheet(LINE_EDIT_STYLE)
         lay.addWidget(self.name_edit)
 
-        self.color_btn = QPushButton("选择颜色 (#a3d2ca)")
+        self.color_btn = R2PushButton("选择颜色 (#a3d2ca)", radius=12)
         # setStyleSheet accepts a single string; join all rules into one
         self.color_btn.setStyleSheet(
             f"background-color: {self.book_color}; "
@@ -60,6 +60,10 @@ class NewWordBookDialog(FrostedGlassMixin, QDialog):
         cancel_btn = btns.button(QDialogButtonBox.Cancel)
         ok_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         cancel_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
+        ok_btn.resize(ok_btn.sizeHint())
+        cancel_btn.resize(cancel_btn.sizeHint())
+        apply_r2_mask(ok_btn, 12)
+        apply_r2_mask(cancel_btn, 12)
         btns.accepted.connect(self._accept)
         btns.rejected.connect(self.reject)
         lay.addWidget(btns)

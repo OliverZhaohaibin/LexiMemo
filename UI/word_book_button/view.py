@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from UI.styles import RED_BUTTON_STYLE, SMALL_RED_BUTTON_STYLE
+from UI.glass_effect import apply_r2_mask
 from UI.folder_ui.api import calculate_reorder_area
 
 # -------- 常量 -------- #
@@ -72,6 +73,7 @@ class WordBookButtonView(QPushButton):
         self.setStyleSheet(
             "QPushButton {background: transparent; border: none; color:#333; font-weight:bold;}"
         )
+        apply_r2_mask(self, 20)
 
         # —— 点击暗化状态 —— #
         self._dark_opacity = 0.0
@@ -107,6 +109,10 @@ class WordBookButtonView(QPushButton):
         self.delete_btn.hide()
         self.delete_btn.clicked.connect(self.deleteRequested)
         self._update_delete_btn()
+
+    def resizeEvent(self, event):  # type: ignore[override]
+        super().resizeEvent(event)
+        apply_r2_mask(self, 20)
 
         # Ensure jitter timer cleans up if this widget is destroyed
         self.destroyed.connect(self._handle_destroyed)

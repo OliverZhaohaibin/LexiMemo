@@ -6,13 +6,13 @@ import random
 from datetime import datetime, timedelta
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QLineEdit, QMessageBox, QFrame, QTextEdit
 )
 from UI.font import meaning_font, main_word_font, list_word_font, sentence_font, normal_font
 from UI.styles import PRIMARY_BUTTON_STYLE, SECONDARY_BUTTON_STYLE, TEXT_EDIT_STYLE, LINE_EDIT_STYLE
 from services.memory_service import MemoryService
-from UI.glass_effect import FrostedGlassMixin, FadeInWindowMixin
+from UI.glass_effect import FrostedGlassMixin, FadeInWindowMixin, R2PushButton
 from UI.title_bar import TitleBar
 
 # 艾宾浩斯遗忘曲线复习间隔（单位：天）
@@ -91,7 +91,7 @@ class MemoryCurveApp(FadeInWindowMixin, FrostedGlassMixin, QWidget):
         self.word_input.textChanged.connect(self.update_hint_display)
         input_layout.addWidget(self.word_input)
 
-        self.check_button = QPushButton("确认")
+        self.check_button = R2PushButton("确认", radius=12)
         self.check_button.setStyleSheet(PRIMARY_BUTTON_STYLE)
         self.check_button.clicked.connect(self.check_answer)
         input_layout.addWidget(self.check_button)
@@ -116,17 +116,17 @@ class MemoryCurveApp(FadeInWindowMixin, FrostedGlassMixin, QWidget):
         button_layout = QHBoxLayout()
         button_layout.setSpacing(8)
 
-        self.hint_button = QPushButton("提示")
+        self.hint_button = R2PushButton("提示", radius=12)
         self.hint_button.setStyleSheet(SECONDARY_BUTTON_STYLE)
         self.hint_button.clicked.connect(self.show_letter_hint)
         button_layout.addWidget(self.hint_button)
 
-        self.show_answer_button = QPushButton("显示答案")
+        self.show_answer_button = R2PushButton("显示答案", radius=12)
         self.show_answer_button.setStyleSheet(SECONDARY_BUTTON_STYLE)
         self.show_answer_button.clicked.connect(self.show_answer)
         button_layout.addWidget(self.show_answer_button)
 
-        self.next_button = QPushButton("下一个")
+        self.next_button = R2PushButton("下一个", radius=12)
         self.next_button.setStyleSheet(PRIMARY_BUTTON_STYLE)
         self.next_button.clicked.connect(self.next_word)
         self.next_button.setEnabled(False)  # 初始禁用

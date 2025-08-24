@@ -5,7 +5,7 @@ from PySide6.QtCore    import Qt, Signal, QEvent
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
-    QPushButton, QLineEdit, QListWidget, QLabel
+    QLineEdit, QListWidget, QLabel
 )
 from UI.word_book_cover.cover_content import CoverContent
 from UI.styles import (
@@ -15,7 +15,7 @@ from UI.styles import (
     BACKGROUND_COLOR,
 )
 from UI.title_bar import TitleBar
-from UI.glass_effect import FrostedGlassMixin
+from UI.glass_effect import FrostedGlassMixin, R2PushButton
 
 
 class CoverView(FrostedGlassMixin, QWidget):
@@ -46,7 +46,7 @@ class CoverView(FrostedGlassMixin, QWidget):
         self.titlebar = TitleBar(self, "背单词程序")
 
         # ========= ② 头部 =========
-        self.edit_btn = QPushButton("编辑")
+        self.edit_btn = R2PushButton("编辑", radius=12)
         self.edit_btn.setFixedSize(60, 30)
         self.edit_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
 

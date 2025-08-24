@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt, QRectF, QPropertyAnimation
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QBitmap
 from PySide6.QtWidgets import (
     QFrame,
+    QPushButton,
     QGraphicsBlurEffect,
     QGraphicsDropShadowEffect,
 )
@@ -46,6 +47,18 @@ def _r2_path(rect: QRectF, radius: float) -> QPainterPath:
     return path
 
 
+def apply_r2_mask(widget, radius: int) -> None:
+    """Clip ``widget`` to an R2-continuous rounded rectangle mask."""
+    mask = QBitmap(widget.size())
+    mask.fill(Qt.color0)
+    painter = QPainter(mask)
+    painter.setRenderHint(QPainter.Antialiasing)
+    path = _r2_path(QRectF(mask.rect()), radius)
+    painter.fillPath(path, Qt.color1)
+    painter.end()
+    widget.setMask(mask)
+
+
 class _R2Frame(QFrame):
     """Frame that paints itself as an R2-continuous rounded rectangle."""
 
@@ -70,6 +83,23 @@ class _R2Frame(QFrame):
         painter.fillPath(path, self._color)
         painter.setPen(Qt.NoPen)
         painter.drawPath(path)
+
+
+class R2PushButton(QPushButton):
+    """QPushButton with an R2-continuous mask for smoother corners."""
+
+    def __init__(self, *args, radius: int = 12, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._r2_radius = radius
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+
+    def setRadius(self, radius: int) -> None:
+        self._r2_radius = radius
+        apply_r2_mask(self, self._r2_radius)
+
+    def resizeEvent(self, event):  # type: ignore[override]
+        super().resizeEvent(event)
+        apply_r2_mask(self, self._r2_radius)
 
 
 class FrostedGlassMixin:

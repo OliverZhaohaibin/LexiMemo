@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QRectF, QPropertyAnimation
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QRegion
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QBitmap
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsBlurEffect,
@@ -139,9 +139,16 @@ class FrostedGlassMixin:
         if getattr(self, "_glass_radius", 0) <= 0:
             self.clearMask()
             return
-        path = _r2_path(QRectF(self.rect()), self._glass_radius)
-        region = QRegion(path.toFillPolygon().toPolygon())
-        self.setMask(region)
+        mask = QBitmap(self.size())
+        mask.fill(Qt.color0)
+        painter = QPainter(mask)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setBrush(Qt.color1)
+        painter.setPen(Qt.NoPen)
+        path = _r2_path(QRectF(mask.rect()), self._glass_radius)
+        painter.drawPath(path)
+        painter.end()
+        self.setMask(mask)
 
 
 class FadeInWindowMixin:

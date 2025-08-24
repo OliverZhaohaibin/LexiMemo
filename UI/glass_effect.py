@@ -16,44 +16,32 @@ def with_alpha(color: str, alpha: int) -> QColor:
     c = QColor(color)
     c.setAlpha(alpha)
     return c
-import math
 
 
-def _r2_path(rect: QRectF, radius: float, steps: int = 96) -> QPainterPath:
+def _r2_path(rect: QRectF, radius: float) -> QPainterPath:
     """Return a rounded rectangle with R2-continuous (squircle) corners.
 
-    The path is approximated by sampling a superellipse (n=4) for each
-    corner. ``steps`` controls the smoothness; higher values yield a more
-    refined silhouette at the cost of additional points.
+    The shape uses cubic Bézier curves with the Apple squircle constant
+    (≈0.551915) to avoid the jagged artefacts of polyline sampling.
     """
 
     r = min(radius, rect.width() / 2, rect.height() / 2)
     x, y, w, h = rect.x(), rect.y(), rect.width(), rect.height()
-    n = 4.0  # superellipse exponent, n=4 approximates an iOS-style squircle
-
-    def arc(path: QPainterPath, cx: float, cy: float, start: float, end: float) -> None:
-        for i in range(1, steps + 1):
-            t = start + (end - start) * i / steps
-            ct, st = math.cos(t), math.sin(t)
-            px = cx + r * math.copysign(abs(ct) ** (2 / n), ct)
-            py = cy + r * math.copysign(abs(st) ** (2 / n), st)
-            path.lineTo(px, py)
+    c = r * 0.551915024494  # control point coefficient
 
     path = QPainterPath()
     path.moveTo(x + w - r, y)
 
-    arc(path, x + w - r, y + r, -math.pi / 2, 0)
+    path.cubicTo(x + w - r + c, y, x + w, y + r - c, x + w, y + r)
     path.lineTo(x + w, y + h - r)
 
-    arc(path, x + w - r, y + h - r, 0, math.pi / 2)
+    path.cubicTo(x + w, y + h - r + c, x + w - r + c, y + h, x + w - r, y + h)
     path.lineTo(x + r, y + h)
 
-    arc(path, x + r, y + h - r, math.pi / 2, math.pi)
+    path.cubicTo(x + r - c, y + h, x, y + h - r + c, x, y + h - r)
     path.lineTo(x, y + r)
 
-    arc(path, x + r, y + r, math.pi, 3 * math.pi / 2)
-    path.lineTo(x + w - r, y)
-
+    path.cubicTo(x, y + r - c, x + r - c, y, x + r, y)
     path.closeSubpath()
     return path
 

@@ -13,6 +13,13 @@ from PySide6.QtWidgets import (
 from UI.styles import BACKGROUND_COLOR
 
 
+def with_alpha(color: str, alpha: int) -> QColor:
+    """Return ``color`` with the given alpha applied."""
+    c = QColor(color)
+    c.setAlpha(alpha)
+    return c
+
+
 def _add_r2_corner(
     path: QPainterPath,
     cx: float,
@@ -60,13 +67,13 @@ def _r2_path(rect: QRectF, radius: float) -> QPainterPath:
 class _R2Frame(QFrame):
     """Frame that paints itself as an R2-continuous rounded rectangle."""
 
-    def __init__(self, color: str, radius: int, parent: QFrame | None = None) -> None:
+    def __init__(self, color: QColor | str, radius: int, parent: QFrame | None = None) -> None:
         super().__init__(parent)
         self._color = QColor(color)
         self._radius = radius
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
-    def setColor(self, color: str) -> None:
+    def setColor(self, color: QColor | str) -> None:
         self._color = QColor(color)
         self.update()
 
@@ -88,7 +95,7 @@ class FrostedGlassMixin:
 
     def _init_glass(
         self,
-        color: str = BACKGROUND_COLOR,
+        color: QColor | str = BACKGROUND_COLOR,
         blur_radius: int = 30,
         border_radius: int = 20,
         shadow_color: QColor | None = None,
@@ -132,7 +139,7 @@ class FrostedGlassMixin:
             self._glass_bg.setGeometry(self._glass_container.rect())
             self._update_mask()
 
-    def _set_glass_color(self, color: str) -> None:
+    def _set_glass_color(self, color: QColor | str) -> None:
         if hasattr(self, "_glass_bg"):
             self._glass_bg.setColor(color)
 

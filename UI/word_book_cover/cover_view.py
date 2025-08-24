@@ -8,9 +8,14 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QListWidget, QLabel
 )
 from UI.word_book_cover.cover_content import CoverContent
-from UI.styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, LINE_EDIT_STYLE
+from UI.styles import (
+    SECONDARY_BUTTON_STYLE,
+    RED_BUTTON_STYLE,
+    LINE_EDIT_STYLE,
+    BACKGROUND_COLOR,
+)
 from UI.title_bar import TitleBar
-from UI.glass_effect import FrostedGlassMixin
+from UI.glass_effect import FrostedGlassMixin, with_alpha
 
 
 class CoverView(FrostedGlassMixin, QWidget):
@@ -31,7 +36,11 @@ class CoverView(FrostedGlassMixin, QWidget):
         self.resize(660, 720)
         # apply a rounded R2 mask so the main view uses the same soft card
         # shape as other windows
-        self._init_glass(blur_radius=0, border_radius=25)
+        self._init_glass(
+            color=with_alpha(BACKGROUND_COLOR, 200),
+            blur_radius=30,
+            border_radius=25,
+        )
 
         # ========= ① 标题栏 =========
         self.titlebar = TitleBar(self, "背单词程序")
@@ -62,6 +71,7 @@ class CoverView(FrostedGlassMixin, QWidget):
             "QScrollArea> QWidget> QWidget{background:transparent;}"
         )
         self.scroll_area.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        self.scroll_area.setViewportMargins(16, 0, 16, 16)
 
         # ⭐ 改用 CoverContent（自带文件夹功能）
         self.content = CoverContent(self.scroll_area)
@@ -75,21 +85,13 @@ class CoverView(FrostedGlassMixin, QWidget):
         )
         self.empty_hint.setAlignment(Qt.AlignCenter)
 
-        # ========= ④ 内层容器 =========
-        self.card = QWidget()
-        self.card.setAttribute(Qt.WA_TranslucentBackground, True)
-        card_layout = QVBoxLayout(self.card)
-        card_layout.setContentsMargins(16, 16, 16, 16)
-        card_layout.setSpacing(8)
-        card_layout.addLayout(head)
-        card_layout.addWidget(self.scroll_area)
-
-        # ========= ⑤ 根布局 =========
+        # ========= ④ 根布局 =========
         root = QVBoxLayout(self)
         root.setContentsMargins(12, 12, 12, 12)
         root.setSpacing(8)
         root.addWidget(self.titlebar)
-        root.addWidget(self.card, 1)
+        root.addLayout(head)
+        root.addWidget(self.scroll_area, 1)
 
         # ========= ⑦ 下拉建议列表 =========
         self.suggestions_list = QListWidget()

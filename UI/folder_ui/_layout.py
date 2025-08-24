@@ -231,7 +231,7 @@ class FolderLayoutMixin:
             nb_bottom = new_book_target.y() + bh + sp
             max_bottom = max(max_bottom, nb_bottom)
 
-        self.scroll_content.setMinimumSize(available_width, max_bottom)
+        self.scroll_content.setMinimumHeight(max_bottom)
 
         # ---------- 4) 更新文件夹背景框 ----------
         update_all_folder_backgrounds(self, bw, bh)

@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QPushButton, QLineEdit, QListWidget, QLabel
 )
 from UI.word_book_cover.cover_content import CoverContent
-from UI.styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, TEXT_EDIT_STYLE
+from UI.styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, LINE_EDIT_STYLE
 from UI.title_bar import TitleBar
 from UI.glass_effect import FrostedGlassMixin
 
@@ -41,7 +41,7 @@ class CoverView(FrostedGlassMixin, QWidget):
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("在全部单词册内搜索 …")
         self.search_bar.setFixedHeight(33)
-        self.search_bar.setStyleSheet(TEXT_EDIT_STYLE)
+        self.search_bar.setStyleSheet(LINE_EDIT_STYLE)
         self.search_bar.installEventFilter(self)
 
         head = QHBoxLayout()
@@ -64,6 +64,8 @@ class CoverView(FrostedGlassMixin, QWidget):
             "QScrollArea> QWidget> QWidget{background:transparent;}"
         )
 
+        self.scroll_area.setViewportMargins(16, 0, 16, 16)
+
         # ⭐ 改用 CoverContent（自带文件夹功能）
         self.content = CoverContent(self.scroll_area)
         self.content.setStyleSheet("background:transparent;")
@@ -75,7 +77,7 @@ class CoverView(FrostedGlassMixin, QWidget):
 
         # ========= ③ 根布局 =========
         root = QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
+        root.setContentsMargins(12, 12, 12, 12)
         root.setSpacing(0)
         root.addWidget(TitleBar(self, "背单词程序"))
         root.addLayout(head)

@@ -5,13 +5,20 @@ from PySide6.QtCore    import Qt, Signal, QEvent
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QScrollArea,
-    QPushButton, QLineEdit, QListWidget, QLabel
+    QLineEdit, QListWidget, QLabel
 )
 from UI.word_book_cover.cover_content import CoverContent
-from UI.styles import SECONDARY_BUTTON_STYLE, RED_BUTTON_STYLE, TEXT_EDIT_STYLE
+from UI.styles import (
+    SECONDARY_BUTTON_STYLE,
+    RED_BUTTON_STYLE,
+    LINE_EDIT_STYLE,
+    BACKGROUND_COLOR,
+)
+from UI.title_bar import TitleBar
+from UI.glass_effect import R2WindowMixin, R2PushButton
 
 
-class CoverView(QWidget):
+class CoverView(R2WindowMixin, QWidget):
     """
     纯 UI：标题栏 = 编辑按钮 + 全局搜索框
     中部 = ScrollArea，内部由 Controller 绝对定位各 WordBookButton
@@ -25,42 +32,62 @@ class CoverView(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("背单词程序")
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.resize(660, 720)
+        self._init_r2(color=BACKGROUND_COLOR, border_radius=25)
 
-        # ========= ① 头部 =========
-        self.edit_btn = QPushButton("编辑")
+        # ========= ① 标题栏 =========
+        self.titlebar = TitleBar(self, "背单词程序")
+
+        # ========= ② 头部 =========
+        self.edit_btn = R2PushButton("编辑", radius=12)
         self.edit_btn.setFixedSize(60, 30)
         self.edit_btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
 
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("在全部单词册内搜索 …")
         self.search_bar.setFixedHeight(33)
-        self.search_bar.setStyleSheet(TEXT_EDIT_STYLE)
+        self.search_bar.setStyleSheet(LINE_EDIT_STYLE)
         self.search_bar.installEventFilter(self)
 
         head = QHBoxLayout()
         head.setContentsMargins(0, 0, 0, 0)
+        head.setSpacing(10)
         head.addWidget(self.edit_btn)
         head.addWidget(self.search_bar, 1)
 
-        # ========= ② ScrollArea =========
+        # ========= ③ ScrollArea =========
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QScrollArea.NoFrame)
+        self.scroll_area.setStyleSheet(
+            "QScrollArea{background:transparent;border:none;}"
+            "QScrollArea> QWidget> QWidget{background:transparent;}"
+        )
+        self.scroll_area.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        self.scroll_area.setViewportMargins(16, 0, 16, 16)
 
         # ⭐ 改用 CoverContent（自带文件夹功能）
         self.content = CoverContent(self.scroll_area)
+        self.content.setStyleSheet("background:transparent;")
         self.scroll_area.setWidget(self.content)
 
         # —— 初次启动提示 —— #
-        self.empty_hint = QLabel("还没有单词本，点击下面的『新建单词本』按钮开始吧！", self.content)
+        self.empty_hint = QLabel(
+            "还没有单词本，点击下面的『新建单词本』按钮开始吧！",
+            self.content,
+        )
         self.empty_hint.setAlignment(Qt.AlignCenter)
 
-        # ========= ③ 根布局 =========
+        # ========= ④ 根布局 =========
         root = QVBoxLayout(self)
+        root.setContentsMargins(12, 12, 12, 12)
+        root.setSpacing(8)
+        root.addWidget(self.titlebar)
         root.addLayout(head)
-        root.addWidget(self.scroll_area)
+        root.addWidget(self.scroll_area, 1)
 
-        # ========= ④ 下拉建议列表 =========
+        # ========= ⑦ 下拉建议列表 =========
         self.suggestions_list = QListWidget()
         self.suggestions_list.setWindowFlags(
             Qt.FramelessWindowHint
@@ -73,7 +100,7 @@ class CoverView(QWidget):
         self.suggestions_list.hide()
         self.suppress_suggestions_once = False
 
-        # ========= ⑤ 信号外发 =========
+        # ========= ⑧ 信号外发 =========
         self.edit_btn.clicked.connect(self._toggle_edit)
         self.search_bar.textChanged.connect(self.searchTextChanged)
 

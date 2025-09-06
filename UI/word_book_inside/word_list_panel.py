@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLineEdit, QLabel, QPushButton,
+    QWidget, QVBoxLayout, QLineEdit, QLabel,
     QScrollArea, QHBoxLayout
 )
+from UI.glass_effect import R2PushButton
 from PySide6.QtCore import Signal, Qt, QTimer
 
 from UI.element.MultiSelectComboBox import MultiSelectComboBox
@@ -54,12 +55,12 @@ class WordListPanel(QWidget):
         lay.addLayout(tag_row)
 
         # ---- 控制按钮 ---- #
-        btn_add = QPushButton("添加新单词")
+        btn_add = R2PushButton("添加新单词", radius=12)
         btn_add.setStyleSheet(PRIMARY_BUTTON_STYLE)
         btn_add.clicked.connect(self.add_word_click)
         lay.addWidget(btn_add)
 
-        btn_mem = QPushButton("背单词")
+        btn_mem = R2PushButton("背单词", radius=12)
         btn_mem.setStyleSheet(SECONDARY_BUTTON_STYLE)
         btn_mem.clicked.connect(self.memory_click)
         lay.addWidget(btn_mem)
@@ -89,7 +90,7 @@ class WordListPanel(QWidget):
                 w.deleteLater()
 
         for wd in words:
-            btn = QPushButton(wd.text)
+            btn = R2PushButton(wd.text, radius=12)
             btn.setFont(list_word_font)
             btn.clicked.connect(lambda _, d=wd: self.word_selected.emit(d))
             self._list_layout.addWidget(btn)

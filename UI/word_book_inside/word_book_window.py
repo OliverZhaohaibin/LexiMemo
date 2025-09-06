@@ -1,9 +1,17 @@
 from __future__ import annotations
 
 import os
-from PySide6.QtWidgets import QSplitter, QWidget, QVBoxLayout, QApplication
+from PySide6.QtWidgets import (
+    QSplitter,
+    QWidget,
+    QVBoxLayout,
+    QApplication,
+    QSizeGrip,
+)
 from UI.font import normal_font
 from PySide6.QtCore import Qt
+from UI.glass_effect import R2WindowMixin, FadeInWindowMixin
+from UI.title_bar import TitleBar
 
 from UI.word_book_inside.word_list_panel import WordListPanel
 from UI.word_book_inside.word_detail_panel import WordDetailPanel
@@ -12,7 +20,7 @@ from services.wordbook_service import WordBookService as WS
 from domain.models import Word
 
 
-class WordBookWindow(QWidget):
+class WordBookWindow(FadeInWindowMixin, R2WindowMixin, QWidget):
     """顶层壳（替代原 inside.WordBookApp）。"""
 
     def __init__(self, path: str, target_word: str | None = None):
@@ -21,15 +29,41 @@ class WordBookWindow(QWidget):
         self.book_name = os.path.basename(path).split("_")[1]
         self.book_color = os.path.basename(path).split("_")[2]
         self.setWindowTitle(f"单词本 - {self.book_name}")
-        self.resize(1200, 800)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
+
+        self._init_r2(border_radius=25)
 
         self._build_ui()
+
+        # allow resizing by exposing a size grip on the bottom-right corner
+        self._size_grip = QSizeGrip(self)
+        self._size_grip.setFixedSize(16, 16)
+
+        # Ensure the window is at least large enough for its contents and
+        # avoid mismatches between the initial size and the minimum required
+        # layout size that previously led to unusable UI states.
+        hint = self.minimumSizeHint()
+        w = max(1200, hint.width())
+        h = max(800, hint.height())
+        self.setMinimumSize(w, h)
+        self.resize(w, h)
+
         if target_word:
             self._jump_to_word(target_word)
 
     # ------------------------------------------------------------------
     def _build_ui(self):
         lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+        self._title_bar = TitleBar(self, f"单词本 - {self.book_name}")
+        lay.addWidget(self._title_bar)
+
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(20, 20, 20, 20)
+        container_layout.setSpacing(12)
+
         self.split = QSplitter(Qt.Horizontal)
         self.list_panel = WordListPanel(self.book_name, self.book_color)
         self.list_panel.word_selected.connect(self._on_word_selected)
@@ -42,7 +76,9 @@ class WordBookWindow(QWidget):
         self.detail_panel.related_clicked.connect(self._jump_to_word)
         self.split.addWidget(self.detail_panel)
         self.split.setSizes([350, 850])
-        lay.addWidget(self.split)
+        container_layout.addWidget(self.split)
+
+        lay.addWidget(container)
 
         self._current_word: Word | None = None
         self._dlg_add = None  # 保留对话框引用，避免被 GC
@@ -97,6 +133,15 @@ class WordBookWindow(QWidget):
             if w.text.strip().lower() == str(word_name).strip().lower():
                 self._on_word_selected(w)
                 break
+
+    # ------------------------------------------------------------------
+    def resizeEvent(self, event):  # type: ignore[override]
+        super().resizeEvent(event)
+        self._size_grip.move(
+            self.width() - self._size_grip.width(),
+            self.height() - self._size_grip.height(),
+        )
+        self._size_grip.raise_()
 
 
 if __name__ == "__main__":

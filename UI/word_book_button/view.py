@@ -3,7 +3,7 @@ import os, sys, math
 from pathlib import Path
 
 from PySide6.QtCore import (
-    Qt, QPoint, QTimer, Property, QPropertyAnimation, Signal
+    Qt, QPoint, QTimer, Property, QPropertyAnimation, Signal, QRectF
 )
 from PySide6.QtGui import (
     QColor, QPainter, QPixmap, QAction, QFont
@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from UI.styles import RED_BUTTON_STYLE, SMALL_RED_BUTTON_STYLE
+from UI.glass_effect import R2PushButton, _r2_path
 from UI.folder_ui.api import calculate_reorder_area
 
 # -------- 常量 -------- #
@@ -101,12 +102,16 @@ class WordBookButtonView(QPushButton):
         self.name_edit.returnPressed.connect(self._finish_name_edit)
         self.name_edit.editingFinished.connect(self._finish_name_edit)
 
-        self.delete_btn = QPushButton("✕", self)
+        self.delete_btn = R2PushButton("✕", self, radius=11)
         self.delete_btn.setFixedSize(22, 22)
         self.delete_btn.setStyleSheet(SMALL_RED_BUTTON_STYLE)
         self.delete_btn.hide()
         self.delete_btn.clicked.connect(self.deleteRequested)
         self._update_delete_btn()
+
+    def resizeEvent(self, event):  # type: ignore[override]
+        super().resizeEvent(event)
+        self.update()
 
         # Ensure jitter timer cleans up if this widget is destroyed
         self.destroyed.connect(self._handle_destroyed)
@@ -383,6 +388,11 @@ class WordBookButtonView(QPushButton):
     def paintEvent(self, _):  # noqa: N802
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        hq_hint = getattr(QPainter, "HighQualityAntialiasing", None)
+        if hq_hint is not None:
+            painter.setRenderHint(hq_hint)
+        path = _r2_path(QRectF(self.rect()), 20)
+        painter.setClipPath(path)
 
         painter.save()
         if self._rotation:
@@ -393,9 +403,7 @@ class WordBookButtonView(QPushButton):
         # 2. 悬浮高亮 / 按下背景
         if self.underMouse() or self.isDown():
             bg = QColor(self.color).lighter(130 if self.isDown() else 180)
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(bg)
-            painter.drawRoundedRect(self.rect(), 14, 14)
+            painter.fillPath(path, bg)
 
         # 3. 图标
         ix = (self.width() - self.icon_pixmap.width()) // 2
@@ -404,9 +412,7 @@ class WordBookButtonView(QPushButton):
         # 4. 暗化遮罩
         if self._dark_opacity > 0.01:
             c = QColor(0, 0, 0, int(150 * self._dark_opacity))
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(c)
-            painter.drawRoundedRect(self.rect(), 14, 14)
+            painter.fillPath(path, c)
 
         # 5. 文字
         text_y = self.icon_size + 6

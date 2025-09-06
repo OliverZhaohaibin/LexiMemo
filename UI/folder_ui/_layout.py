@@ -20,25 +20,40 @@ def calculate_main_button_positions(
     计算主界面按钮的位置
     """
     target_positions = []
-    current_x = spacing
     current_y = spacing + top_margin
 
-    main_buttons_for_layout = [btn for btn in buttons if
-                               not btn.is_sub_button and not getattr(btn, 'is_new_button', False)]
+    main_buttons_for_layout = [
+        btn for btn in buttons
+        if not btn.is_sub_button and not getattr(btn, 'is_new_button', False)
+    ]
 
-    # Include the trailing spacing when calculating how many buttons fit per row.
-    # This prevents the layout from falling back to a single column when there is
-    # still enough room for an additional button plus its spacing.
+    # Include the trailing spacing when calculating how many buttons fit per row
+    # so an extra button can still fit if there's room for its spacing.
     buttons_per_row = max(1, (central_widget_width + spacing) // (button_width + spacing))
 
+    total_main = len(main_buttons_for_layout)
+
+    def row_margin(remaining: int) -> int:
+        """Compute the left margin to horizontally center ``remaining`` buttons
+        while keeping the spacing between them constant."""
+
+        row_cnt = max(1, min(buttons_per_row, remaining))
+        used = row_cnt * button_width + (row_cnt - 1) * spacing
+        margin = (central_widget_width - used) // 2
+        return max(spacing, margin)
+
+    left_margin = row_margin(total_main)
+    current_x = left_margin
     idx = 0
+
     for btn in buttons:
         if btn.is_sub_button or getattr(btn, 'is_new_button', False):
             continue
 
         if idx > 0 and idx % buttons_per_row == 0:
             current_y += button_height + spacing
-            current_x = spacing
+            left_margin = row_margin(total_main - idx)
+            current_x = left_margin
 
         target_positions.append(QPoint(current_x, current_y))
         current_x += button_width + spacing
@@ -216,7 +231,7 @@ class FolderLayoutMixin:
             nb_bottom = new_book_target.y() + bh + sp
             max_bottom = max(max_bottom, nb_bottom)
 
-        self.scroll_content.setMinimumSize(available_width, max_bottom)
+        self.scroll_content.setMinimumHeight(max_bottom)
 
         # ---------- 4) 更新文件夹背景框 ----------
         update_all_folder_backgrounds(self, bw, bh)
@@ -290,29 +305,25 @@ class FolderLayoutMixin:
             if i < len(targets) and btn is not dragged_button and not getattr(btn, "is_dragging", False):
                 btn.move(targets[i])
 
-        current_x = self.spacing
-        current_y = self.spacing + getattr(self, "top_margin", 40)
         available_width = self.scroll_content.width() or self.scroll_area.viewport().width()
         bw, bh, sp = self.button_width, self.button_height, self.spacing
-        buttons_per_row = max(1, (available_width - sp) // (bw + sp))
+        buttons_per_row = max(1, (available_width + sp) // (bw + sp))
+        top_margin = getattr(self, "top_margin", 40)
 
         num_main_items = len(all_main_buttons)
 
-        final_row_idx = (num_main_items - 1) // buttons_per_row if num_main_items > 0 else -1
-        final_col_idx = (num_main_items - 1) % buttons_per_row if num_main_items > 0 else -1
+        row = num_main_items // buttons_per_row
+        col = num_main_items % buttons_per_row
+        row_cnt = col + 1 if col < buttons_per_row else 1
+        used = row_cnt * bw + (row_cnt - 1) * sp
+        left_margin = max(sp, (available_width - used) // 2)
 
-        current_y += final_row_idx * (bh + sp) if final_row_idx >= 0 else 0
-        current_x += (final_col_idx + 1) * (bw + sp) if final_col_idx >= 0 else 0
+        x = left_margin + col * (bw + sp)
+        y = sp + top_margin + row * (bh + sp)
 
         if hasattr(self, 'new_book_button'):
-            if num_main_items == 0:
-                current_x = sp
-                current_y = sp + getattr(self, "top_margin", 40)
-            elif current_x + bw > available_width - sp:
-                current_y += bh + sp
-                current_x = sp
             if not getattr(self.new_book_button, "is_dragging", False):
-                self.new_book_button.move(QPoint(current_x, current_y))
+                self.new_book_button.move(QPoint(x, y))
 
     def finalize_button_order(self):
         all_main_buttons = [b for b in self.buttons if not b.is_sub_button and not getattr(b, 'is_new_button', False)]
@@ -332,27 +343,22 @@ class FolderLayoutMixin:
                 anim_group.addAnimation(anim)
 
         if hasattr(self, 'new_book_button'):
-            current_x = self.spacing
-            current_y = self.spacing + getattr(self, "top_margin", 40)
             available_width = self.scroll_content.width() or self.scroll_area.viewport().width()
             bw, bh, sp = self.button_width, self.button_height, self.spacing
-            buttons_per_row = max(1, (available_width - sp) // (bw + sp))
+            buttons_per_row = max(1, (available_width + sp) // (bw + sp))
+            top_margin = getattr(self, "top_margin", 40)
 
             num_main_items = len(all_main_buttons)
-            final_row_idx = (num_main_items - 1) // buttons_per_row if num_main_items > 0 else -1
-            final_col_idx = (num_main_items - 1) % buttons_per_row if num_main_items > 0 else -1
+            row = num_main_items // buttons_per_row
+            col = num_main_items % buttons_per_row
+            row_cnt = col + 1 if col < buttons_per_row else 1
+            used = row_cnt * bw + (row_cnt - 1) * sp
+            left_margin = max(sp, (available_width - used) // 2)
 
-            current_y += final_row_idx * (bh + sp) if final_row_idx >= 0 else 0
-            current_x += (final_col_idx + 1) * (bw + sp) if final_col_idx >= 0 else 0
+            x = left_margin + col * (bw + sp)
+            y = sp + top_margin + row * (bh + sp)
 
-            if num_main_items == 0:
-                current_x = sp
-                current_y = sp + getattr(self, "top_margin", 40)
-            elif current_x + bw > available_width - sp:
-                current_y += bh + sp
-                current_x = sp
-
-            new_book_final_pos = QPoint(current_x, current_y)
+            new_book_final_pos = QPoint(x, y)
             if self.new_book_button.pos() != new_book_final_pos:
                 anim = create_button_position_animation(self.new_book_button, new_book_final_pos, duration=300)
                 anim_group.addAnimation(anim)

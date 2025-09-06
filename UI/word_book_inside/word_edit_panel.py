@@ -4,8 +4,9 @@ from datetime import datetime
 from typing import List, Tuple
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QGridLayout, QLineEdit, QTextEdit, QLabel, QPushButton, QHBoxLayout, QMessageBox
+    QWidget, QVBoxLayout, QGridLayout, QLineEdit, QTextEdit, QLabel, QHBoxLayout, QMessageBox
 )
+from UI.glass_effect import R2PushButton
 from PySide6.QtCore import Signal
 
 from domain.models import Word
@@ -44,9 +45,9 @@ class WordEditPanel(QWidget):
             self._rows.append(self._add_row(0))
 
         ctrl = QHBoxLayout()
-        btn_add = QPushButton("+"); btn_add.setFixedSize(30, 30); btn_add.setStyleSheet(GREEN_BUTTON_STYLE)
+        btn_add = R2PushButton("+", radius=15); btn_add.setFixedSize(30, 30); btn_add.setStyleSheet(GREEN_BUTTON_STYLE)
         btn_add.clicked.connect(self._add_row_clicked)
-        btn_rm = QPushButton("-"); btn_rm.setFixedSize(30, 30); btn_rm.setStyleSheet(RED_BUTTON_STYLE)
+        btn_rm = R2PushButton("-", radius=15); btn_rm.setFixedSize(30, 30); btn_rm.setStyleSheet(RED_BUTTON_STYLE)
         btn_rm.clicked.connect(self._remove_row_clicked)
         ctrl.addWidget(btn_add); ctrl.addWidget(btn_rm)
         self.layout.addLayout(ctrl)
@@ -64,10 +65,10 @@ class WordEditPanel(QWidget):
 
         # 按钮
         btn_row = QHBoxLayout()
-        btn_save = QPushButton("保存")
+        btn_save = R2PushButton("保存", radius=12)
         btn_save.setStyleSheet(SECONDARY_BUTTON_STYLE)
         btn_save.clicked.connect(self._on_save)
-        btn_cancel = QPushButton("取消")
+        btn_cancel = R2PushButton("取消", radius=12)
         btn_cancel.setStyleSheet(RED_BUTTON_STYLE)
         btn_cancel.clicked.connect(self.cancelled.emit)
         btn_row.addWidget(btn_save)

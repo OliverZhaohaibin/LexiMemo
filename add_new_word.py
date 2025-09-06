@@ -2,11 +2,24 @@
 import sys
 import os
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QLineEdit, QLabel, QPushButton, QHBoxLayout, QMessageBox,
-    QInputDialog, QGridLayout, QFrame, QTextEdit, QScrollArea, QCheckBox
+    QApplication,
+    QWidget,
+    QVBoxLayout,
+    QLineEdit,
+    QLabel,
+    QHBoxLayout,
+    QMessageBox,
+    QInputDialog,
+    QGridLayout,
+    QFrame,
+    QTextEdit,
+    QScrollArea,
+    QCheckBox,
+    QSizeGrip,
 )
 from UI.font import normal_font
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
+from UI.title_bar import TitleBar
 
 from domain.models import Word
 
@@ -17,10 +30,12 @@ from utils import get_tags_path, get_total_tags_path
 from services.wordbook_service import WordBookService as WS
 from UI.styles import GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, GRAY_INPUT_STYLE, GRAY_TEXT_EDIT_STYLE, PRIMARY_BUTTON_STYLE, \
     SECONDARY_BUTTON_STYLE
+from UI.glass_effect import FadeInWindowMixin, R2WindowMixin, R2PushButton
 
 
-class WordEntryUI(QWidget):
+class WordEntryUI(FadeInWindowMixin, R2WindowMixin, QWidget):
     save_successful = Signal(Word)
+
     def __init__(self, path):
         super(WordEntryUI, self).__init__()
         self.path = path  # 保存传入的路径
@@ -28,15 +43,36 @@ class WordEntryUI(QWidget):
         self.book_color = os.path.basename(path).split('_')[2]
 
         self.setWindowTitle("新单词")
-        self.resize(800, 700)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
+
+        hint = self.minimumSizeHint()
+        w = max(800, hint.width())
+        h = max(700, hint.height())
+        self.setMinimumSize(w, h)
+        self.resize(w, h)
+
+        # expose a grip to allow manual resizing when the system frame is absent
+        self._size_grip = QSizeGrip(self)
+        self._size_grip.setFixedSize(16, 16)
+
+        self._init_r2(border_radius=20)
+
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+        outer_layout.addWidget(TitleBar(self, "新单词"))
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
 
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
+        self.scroll_layout.setContentsMargins(20, 20, 20, 20)
+        self.scroll_layout.setSpacing(12)
 
-        self.layout = QVBoxLayout()
+        outer_layout.addWidget(self.scroll_area)
+
+        self.scroll_area.setWidget(self.scroll_content)
 
         # 单词
         self.word_layout = QHBoxLayout()
@@ -53,15 +89,16 @@ class WordEntryUI(QWidget):
         self.related_layout = QVBoxLayout()
         self.related_layout.setSpacing(10)
         self.related_items = [self.add_related_input_field(0)]
-        self.add_related_button = QPushButton("+")
+        self.add_related_button = R2PushButton("+", radius=12)
         self.add_related_button.setFixedSize(30, 30)
         self.add_related_button.setStyleSheet(GREEN_BUTTON_STYLE) # 加号按钮样式
         self.add_related_button.clicked.connect(self.add_related_input_row)
-        self.remove_related_button = QPushButton("-")
+        self.remove_related_button = R2PushButton("-", radius=12)
         self.remove_related_button.setFixedSize(30, 30)
         self.remove_related_button.setStyleSheet(RED_BUTTON_STYLE) # 减号按钮样式
         self.remove_related_button.clicked.connect(self.remove_related_input_row)
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(8)
         button_layout.addWidget(self.add_related_button)
         button_layout.addWidget(self.remove_related_button)
         self.scroll_layout.addLayout(self.related_layout)
@@ -77,16 +114,17 @@ class WordEntryUI(QWidget):
         self.meaning_example_layout = QVBoxLayout()
         self.meaning_example_grid = QGridLayout()
         self.meaning_inputs = [self.add_meaning_example_pair(0)]
-        self.add_meaning_button = QPushButton("+")
+        self.add_meaning_button = R2PushButton("+", radius=12)
         self.add_meaning_button.setFixedSize(30, 30)
         self.add_meaning_button.setStyleSheet(GREEN_BUTTON_STYLE) # 加号按钮样式
         self.add_meaning_button.clicked.connect(self.add_meaning_example_row)
-        self.remove_meaning_button = QPushButton("-")
+        self.remove_meaning_button = R2PushButton("-", radius=12)
         self.remove_meaning_button.setFixedSize(30, 30)
         self.remove_meaning_button.setStyleSheet(RED_BUTTON_STYLE) # 减号按钮样式
         self.remove_meaning_button.clicked.connect(self.remove_meaning_example_row)
         self.meaning_example_layout.addLayout(self.meaning_example_grid)
         self.meaning_button_layout = QHBoxLayout()
+        self.meaning_button_layout.setSpacing(8)
         self.meaning_button_layout.addWidget(self.add_meaning_button)
         self.meaning_button_layout.addWidget(self.remove_meaning_button)
         self.meaning_example_layout.addLayout(self.meaning_button_layout)
@@ -112,7 +150,7 @@ class WordEntryUI(QWidget):
         self.tag_layout = QVBoxLayout(self.tag_widget)
         self.tag_scroll_area.setWidget(self.tag_widget)
 
-        self.new_tag_button = QPushButton("新建标签")
+        self.new_tag_button = R2PushButton("新建标签", radius=12)
         self.new_tag_button.clicked.connect(self.add_new_tag)
         self.new_tag_button.setStyleSheet(PRIMARY_BUTTON_STYLE)
 
@@ -122,8 +160,9 @@ class WordEntryUI(QWidget):
 
         # 保存和取消按钮
         self.button_layout = QHBoxLayout()
-        self.save_button = QPushButton("保存")
-        self.cancel_button = QPushButton("取消")
+        self.button_layout.setSpacing(8)
+        self.save_button = R2PushButton("保存", radius=12)
+        self.cancel_button = R2PushButton("取消", radius=12)
         self.cancel_button.setStyleSheet(RED_BUTTON_STYLE)  # 取消按钮样式
         self.cancel_button.clicked.connect(self.close)
         self.save_button.setStyleSheet(SECONDARY_BUTTON_STYLE) # 保存按钮样式
@@ -135,9 +174,15 @@ class WordEntryUI(QWidget):
 
         self.save_button.clicked.connect(self.save_word)
 
-        self.scroll_area.setWidget(self.scroll_content)
-        self.layout.addWidget(self.scroll_area)
-        self.setLayout(self.layout)
+    # ---------------------------------------------------------------
+    def resizeEvent(self, event):  # type: ignore[override]
+        super().resizeEvent(event)
+        if hasattr(self, "_size_grip"):
+            self._size_grip.move(
+                self.width() - self._size_grip.width(),
+                self.height() - self._size_grip.height(),
+            )
+            self._size_grip.raise_()
 
     def add_meaning_example_pair(self, row):
         """

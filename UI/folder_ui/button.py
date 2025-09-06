@@ -1,9 +1,10 @@
 import math
 from typing import Optional, Tuple
 
-from PySide6.QtCore import Qt, QPoint, QPropertyAnimation, QRect, QEasingCurve, QParallelAnimationGroup, QSize
+from PySide6.QtCore import Qt, QPoint, QPropertyAnimation, QRect, QRectF, QEasingCurve, QParallelAnimationGroup, QSize
 from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import QPushButton, QStyleOptionButton, QStyle
+from UI.glass_effect import R2PushButton, _r2_path
 from PySide6.QtCore import Property
 
 
@@ -33,7 +34,7 @@ class DraggableButton(QPushButton):
         self.folder_animation_group = None
         # ➤➤➤ 新增：删除小按钮（右上角 ✕） ← iOS 风格
         # 使用简单的 'X' 以保证各平台都能正确显示
-        self.delete_button = QPushButton("X", self)
+        self.delete_button = R2PushButton("X", self, radius=11)
         self.delete_button.setFixedSize(22, 22)
         self.delete_button.move(self.width() - self.delete_button.width(), 0)
         self.delete_button.setStyleSheet("""
@@ -48,6 +49,10 @@ class DraggableButton(QPushButton):
                """)
         self.delete_button.hide()
         self.delete_button.clicked.connect(self.on_delete_clicked)
+
+    def resizeEvent(self, event):  # type: ignore[override]
+        super().resizeEvent(event)
+        self.update()
 
     # ✕ 按钮点击 —— 主按钮走 delete_word_book，子按钮走 remove_sub_button_from_folder
     def on_delete_clicked(self):
@@ -135,6 +140,11 @@ class DraggableButton(QPushButton):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        hq_hint = getattr(QPainter, "HighQualityAntialiasing", None)
+        if hq_hint is not None:
+            painter.setRenderHint(hq_hint)
+        path = _r2_path(QRectF(self.rect()), 12)
+        painter.setClipPath(path)
 
         # 保存当前状态
         painter.save()

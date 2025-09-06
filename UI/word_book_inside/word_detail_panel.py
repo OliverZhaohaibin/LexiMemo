@@ -3,9 +3,10 @@ from __future__ import annotations
 from collections import OrderedDict
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit, QPushButton,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTextEdit,
     QTabBar, QScrollArea, QFrame,
 )
+from UI.glass_effect import R2PushButton
 from PySide6.QtCore import Signal, Qt
 
 from domain.models import Word
@@ -91,7 +92,7 @@ class WordDetailPanel(QWidget):
 
         # 编辑按钮
         if self._btn_edit is None:
-            self._btn_edit = QPushButton("编辑")
+            self._btn_edit = R2PushButton("编辑", radius=12)
             self._btn_edit.setStyleSheet(PRIMARY_BUTTON_STYLE)
             self._btn_edit.clicked.connect(lambda: self.edit_requested.emit(self._current_word))
             self.layout.addWidget(self._btn_edit)
@@ -154,7 +155,7 @@ class WordDetailPanel(QWidget):
         else:
             row = QHBoxLayout()
             for rel_word in w.related_words:
-                btn = QPushButton(rel_word)
+                btn = R2PushButton(rel_word, radius=12)
                 btn.setStyleSheet(SECONDARY_BUTTON_STYLE)
                 btn.clicked.connect(lambda _, t=rel_word: self.related_clicked.emit(t))
                 row.addWidget(btn)

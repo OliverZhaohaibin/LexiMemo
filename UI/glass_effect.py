@@ -76,7 +76,11 @@ def _feathered_mask(size: QSize, radius: int, scale: int = 16) -> QBitmap:
     painter.end()
     pix = QPixmap.fromImage(image)
     pix = pix.scaled(size, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-    return pix.mask()
+    alpha = pix.toImage().alphaChannel()
+    mask = alpha.convertToFormat(
+        QImage.Format_Mono, Qt.ThresholdDither | Qt.AvoidDither
+    )
+    return QBitmap.fromImage(mask)
 
 
 def apply_r2_mask(widget, radius: int) -> None:

@@ -8,6 +8,7 @@ from PySide6.QtGui import (
     QBitmap,
     QImage,
     QPixmap,
+    QPen,
 )
 from PySide6.QtWidgets import (
     QFrame,
@@ -54,8 +55,8 @@ def _r2_path(rect: QRectF, radius: float) -> QPainterPath:
     return path
 
 
-def _feathered_mask(size: QSize, radius: int, scale: int = 4) -> QBitmap:
-    """Return an anti-aliased mask for an R2-rounded rect using oversampling."""
+def _feathered_mask(size: QSize, radius: int, scale: int = 8) -> QBitmap:
+    """Return a smoother mask for an R2-rounded rect using heavy oversampling."""
     w, h = size.width() * scale, size.height() * scale
     image = QImage(w, h, QImage.Format_ARGB32)
     image.fill(Qt.transparent)
@@ -97,9 +98,15 @@ class _R2Frame(QFrame):
     def paintEvent(self, event):  # type: ignore[override]
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        hq_hint = getattr(QPainter, "HighQualityAntialiasing", None)
+        if hq_hint is not None:
+            painter.setRenderHint(hq_hint)
         path = _r2_path(QRectF(self.rect()), self._radius)
         painter.fillPath(path, self._color)
-        painter.setPen(Qt.NoPen)
+        # draw a subtle inner border to soften mask edges
+        pen = QPen(QColor(0, 0, 0, 30))
+        pen.setWidthF(1.0)
+        painter.setPen(pen)
         painter.drawPath(path)
 
 

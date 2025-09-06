@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QStyle,
 )
 
-from UI.styles import BACKGROUND_COLOR
 from UI.glass_effect import apply_r2_mask
 
 
@@ -21,8 +20,9 @@ class TitleBar(QFrame):
         self._parent = parent
         self.setFixedHeight(36)
         self.setObjectName("titleBar")
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setStyleSheet(
-            f"#titleBar{{background-color: {BACKGROUND_COLOR};}}"
+            "#titleBar{background: transparent;}"
             "#titleBar QToolButton{background: transparent; border: none;"
             "width: 36px; height: 24px; border-radius:4px;}"
             "#titleBar QToolButton:hover{background: rgba(255,255,255,0.3);}"

@@ -109,11 +109,6 @@ class _R2Frame(QFrame):
             painter.setRenderHint(hq_hint)
         path = _r2_path(QRectF(self.rect()), self._radius)
         painter.fillPath(path, self._color)
-        # draw a subtle inner border to soften mask edges
-        pen = QPen(QColor(0, 0, 0, 30))
-        pen.setWidthF(1.0)
-        painter.setPen(pen)
-        painter.drawPath(path)
 
 
 class R2PushButton(QPushButton):

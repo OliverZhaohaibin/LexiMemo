@@ -73,11 +73,16 @@ class TitleBar(QFrame):
             self._max_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMaxButton))
             if hasattr(self._parent, "_set_shadow_enabled"):
                 self._parent._set_shadow_enabled(True)
+            if hasattr(self._parent, "_set_glass_radius"):
+                self._parent._set_glass_radius(getattr(self._parent, "_glass_base_radius", 0))
         else:
             self._parent.showMaximized()
             self._max_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarNormalButton))
             if hasattr(self._parent, "_set_shadow_enabled"):
                 self._parent._set_shadow_enabled(False)
+            if hasattr(self._parent, "_set_glass_radius"):
+                # Remove rounded corners when maximized to avoid transparent edges
+                self._parent._set_glass_radius(0)
 
     # ---------------------------------------------------------
     def mousePressEvent(self, event):  # type: ignore[override]

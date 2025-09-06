@@ -181,6 +181,12 @@ class FrostedGlassMixin:
             self._glass_bg.setGeometry(self._glass_container.rect())
             self._update_mask()
 
+    def showEvent(self, event):  # type: ignore[override]
+        """Ensure the rounded mask is applied when the window first shows."""
+        super().showEvent(event)
+        # Some window managers reset the mask on show, so reapply it here
+        self._update_mask()
+
     def _set_glass_color(self, color: QColor | str) -> None:
         if hasattr(self, "_glass_bg"):
             self._glass_bg.setColor(color)

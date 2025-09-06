@@ -15,10 +15,10 @@ from UI.styles import (
     BACKGROUND_COLOR,
 )
 from UI.title_bar import TitleBar
-from UI.glass_effect import FrostedGlassMixin, R2PushButton
+from UI.glass_effect import R2WindowMixin, R2PushButton
 
 
-class CoverView(FrostedGlassMixin, QWidget):
+class CoverView(R2WindowMixin, QWidget):
     """
     纯 UI：标题栏 = 编辑按钮 + 全局搜索框
     中部 = ScrollArea，内部由 Controller 绝对定位各 WordBookButton
@@ -34,13 +34,7 @@ class CoverView(FrostedGlassMixin, QWidget):
         self.setWindowTitle("背单词程序")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.resize(660, 720)
-        # apply a rounded R2 mask so the main view uses the same soft card
-        # shape as other windows
-        self._init_glass(
-            color=BACKGROUND_COLOR,
-            blur_radius=30,
-            border_radius=25,
-        )
+        self._init_r2(color=BACKGROUND_COLOR, border_radius=25)
 
         # ========= ① 标题栏 =========
         self.titlebar = TitleBar(self, "背单词程序")

@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
-from UI.glass_effect import FrostedGlassMixin, R2PushButton
+from UI.glass_effect import R2WindowMixin, R2PushButton
 from UI.styles import (
     LINE_EDIT_STYLE,
     PRIMARY_BUTTON_STYLE,
@@ -13,7 +13,7 @@ from UI.styles import (
 from UI.title_bar import TitleBar
 
 
-class NewWordBookDialog(FrostedGlassMixin, QDialog):
+class NewWordBookDialog(R2WindowMixin, QDialog):
     """输入『名称 + 颜色』的简单对话框"""
 
     def __init__(self, parent=None):
@@ -22,8 +22,7 @@ class NewWordBookDialog(FrostedGlassMixin, QDialog):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.resize(320, 150)
         self.book_color: str = "#a3d2ca"   # 默认色
-        # use a neutral frosted panel – don't tint with book color
-        self._init_glass()
+        self._init_r2()
 
         self._build_ui()
         self.book_name: str | None = None

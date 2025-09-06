@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 )
 from UI.font import normal_font
 from PySide6.QtCore import Qt
-from UI.glass_effect import FrostedGlassMixin, FadeInWindowMixin
+from UI.glass_effect import R2WindowMixin, FadeInWindowMixin
 from UI.title_bar import TitleBar
 
 from UI.word_book_inside.word_list_panel import WordListPanel
@@ -20,7 +20,7 @@ from services.wordbook_service import WordBookService as WS
 from domain.models import Word
 
 
-class WordBookWindow(FadeInWindowMixin, FrostedGlassMixin, QWidget):
+class WordBookWindow(FadeInWindowMixin, R2WindowMixin, QWidget):
     """顶层壳（替代原 inside.WordBookApp）。"""
 
     def __init__(self, path: str, target_word: str | None = None):
@@ -31,8 +31,7 @@ class WordBookWindow(FadeInWindowMixin, FrostedGlassMixin, QWidget):
         self.setWindowTitle(f"单词本 - {self.book_name}")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
 
-        # keep a neutral frosted shell; front elements carry the theme color
-        self._init_glass(blur_radius=35, border_radius=25)
+        self._init_r2(border_radius=25)
 
         self._build_ui()
 

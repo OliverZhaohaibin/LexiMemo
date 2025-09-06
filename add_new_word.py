@@ -30,10 +30,10 @@ from utils import get_tags_path, get_total_tags_path
 from services.wordbook_service import WordBookService as WS
 from UI.styles import GREEN_BUTTON_STYLE, RED_BUTTON_STYLE, GRAY_INPUT_STYLE, GRAY_TEXT_EDIT_STYLE, PRIMARY_BUTTON_STYLE, \
     SECONDARY_BUTTON_STYLE
-from UI.glass_effect import FadeInWindowMixin, R2PushButton
+from UI.glass_effect import FadeInWindowMixin, R2WindowMixin, R2PushButton
 
 
-class WordEntryUI(FadeInWindowMixin, QWidget):
+class WordEntryUI(FadeInWindowMixin, R2WindowMixin, QWidget):
     save_successful = Signal(Word)
 
     def __init__(self, path):
@@ -54,6 +54,8 @@ class WordEntryUI(FadeInWindowMixin, QWidget):
         # expose a grip to allow manual resizing when the system frame is absent
         self._size_grip = QSizeGrip(self)
         self._size_grip.setFixedSize(16, 16)
+
+        self._init_r2(border_radius=20)
 
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(0, 0, 0, 0)

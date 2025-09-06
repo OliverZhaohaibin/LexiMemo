@@ -1,25 +1,15 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QRectF, QPropertyAnimation
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QRadialGradient
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QImage, QBitmap
 from PySide6.QtWidgets import (
-    QFrame,
     QPushButton,
-    QGraphicsBlurEffect,
-    QGraphicsDropShadowEffect,
     QStyle,
     QStyleOptionButton,
     QStylePainter,
 )
 
 from UI.styles import BACKGROUND_COLOR
-
-
-def with_alpha(color: str, alpha: int) -> QColor:
-    """Return ``color`` with the given alpha applied."""
-    c = QColor(color)
-    c.setAlpha(alpha)
-    return c
 
 
 def _r2_path(rect: QRectF, radius: float) -> QPainterPath:
@@ -50,41 +40,22 @@ def _r2_path(rect: QRectF, radius: float) -> QPainterPath:
     return path
 
 
-class _R2Frame(QFrame):
-    """Frame that paints itself as an R2-continuous rounded rectangle."""
+def _r2_mask(size, radius: int, scale: int = 4) -> QBitmap:
+    """Return a high-quality bitmap mask for an R2-rounded rectangle."""
 
-    def __init__(self, color: QColor | str, radius: int, parent: QFrame | None = None) -> None:
-        super().__init__(parent)
-        self._color = QColor(color)
-        self._radius = radius
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
-
-    def setColor(self, color: QColor | str) -> None:
-        self._color = QColor(color)
-        self.update()
-
-    def setRadius(self, radius: int) -> None:
-        self._radius = radius
-        self.update()
-
-    def paintEvent(self, event):  # type: ignore[override]
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        hq_hint = getattr(QPainter, "HighQualityAntialiasing", None)
-        if hq_hint is not None:
-            painter.setRenderHint(hq_hint)
-        path = _r2_path(QRectF(self.rect()), self._radius)
-
-        # draw a radial alpha gradient so the edges fade smoothly without
-        # introducing rectangular corners
-        grad = QRadialGradient(self.rect().center(), max(self.width(), self.height()))
-        opaque = QColor(self._color)
-        transparent = QColor(self._color)
-        transparent.setAlpha(0)
-        grad.setColorAt(0.0, opaque)
-        grad.setColorAt(1.0, transparent)
-
-        painter.fillPath(path, grad)
+    img = QImage(size.width() * scale, size.height() * scale, QImage.Format_ARGB32)
+    img.fill(Qt.transparent)
+    painter = QPainter(img)
+    painter.setRenderHint(QPainter.Antialiasing)
+    hq_hint = getattr(QPainter, "HighQualityAntialiasing", None)
+    if hq_hint is not None:
+        painter.setRenderHint(hq_hint)
+    path = _r2_path(QRectF(0, 0, img.width(), img.height()), radius * scale)
+    painter.fillPath(path, Qt.white)
+    painter.end()
+    img = img.scaled(size, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+    alpha = img.convertToFormat(QImage.Format_Alpha8)
+    return QBitmap.fromImage(alpha)
 
 
 class R2PushButton(QPushButton):
@@ -114,71 +85,33 @@ class R2PushButton(QPushButton):
         path = _r2_path(QRectF(self.rect()), self._r2_radius)
         painter.setClipPath(path)
         painter.drawControl(QStyle.CE_PushButton, option)
+        
 
+class R2WindowMixin:
+    """Mixin that clips a top-level widget to R2-continuous corners."""
 
-class FrostedGlassMixin:
-    """Mixin providing a modern glass-like card background."""
-
-    def _init_glass(
+    def _init_r2(
         self,
         color: QColor | str = BACKGROUND_COLOR,
-        blur_radius: int = 30,
         border_radius: int = 20,
-        shadow_color: QColor | None = None,
     ) -> None:
-        """Create a blurred background with soft shadow."""
-
+        self._r2_base_radius = border_radius
+        self._r2_radius = border_radius
         self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setStyleSheet(f"background: {QColor(color).name()};")
+        self._update_mask()
 
-        container = QFrame(self)
-        container.setObjectName("glass_container")
-        container.setGeometry(self.rect())
-        container.setAttribute(Qt.WA_TranslucentBackground, True)
-        # allow mouse interactions to reach widgets above the frosted layer
-        container.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-
-        shadow = QGraphicsDropShadowEffect(container)
-        shadow.setBlurRadius(40)
-        shadow.setOffset(0, 0)
-        shadow.setColor(shadow_color or QColor(0, 0, 0, 100))
-        container.setGraphicsEffect(shadow)
-        container.lower()
-
-        bg = _R2Frame(color, border_radius, container)
-        bg.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        effect = QGraphicsBlurEffect(bg)
-        effect.setBlurRadius(blur_radius)
-        bg.setGraphicsEffect(effect)
-        bg.setGeometry(container.rect())
-
-        self._glass_container = container
-        self._glass_bg = bg
-        self._glass_shadow = shadow
-        self._glass_base_radius = border_radius
-        self._glass_radius = border_radius
+    def _update_mask(self) -> None:
+        self.setMask(_r2_mask(self.size(), self._r2_radius))
 
     def resizeEvent(self, event):  # type: ignore[override]
         super().resizeEvent(event)
-        if hasattr(self, "_glass_container"):
-            self._glass_container.setGeometry(self.rect())
-            self._glass_bg.setGeometry(self._glass_container.rect())
+        if hasattr(self, "_r2_radius"):
+            self._update_mask()
 
-    def showEvent(self, event):  # type: ignore[override]
-        super().showEvent(event)
-
-    def _set_glass_color(self, color: QColor | str) -> None:
-        if hasattr(self, "_glass_bg"):
-            self._glass_bg.setColor(color)
-
-    def _set_glass_radius(self, radius: int) -> None:
-        if hasattr(self, "_glass_bg"):
-            self._glass_bg.setRadius(radius)
-            self._glass_radius = radius
-
-    def _set_shadow_enabled(self, enabled: bool) -> None:
-        if hasattr(self, "_glass_shadow"):
-            self._glass_shadow.setEnabled(enabled)
-
+    def _set_r2_radius(self, radius: int) -> None:
+        self._r2_radius = radius
+        self._update_mask()
 
 
 class FadeInWindowMixin:

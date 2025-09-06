@@ -1,10 +1,10 @@
 import math
 from typing import Optional, Tuple
 
-from PySide6.QtCore import Qt, QPoint, QPropertyAnimation, QRect, QEasingCurve, QParallelAnimationGroup, QSize
+from PySide6.QtCore import Qt, QPoint, QPropertyAnimation, QRect, QRectF, QEasingCurve, QParallelAnimationGroup, QSize
 from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import QPushButton, QStyleOptionButton, QStyle
-from UI.glass_effect import R2PushButton, apply_r2_mask
+from UI.glass_effect import R2PushButton, _r2_path
 from PySide6.QtCore import Property
 
 
@@ -52,7 +52,7 @@ class DraggableButton(QPushButton):
 
     def resizeEvent(self, event):  # type: ignore[override]
         super().resizeEvent(event)
-        apply_r2_mask(self, 12)
+        self.update()
 
     # ✕ 按钮点击 —— 主按钮走 delete_word_book，子按钮走 remove_sub_button_from_folder
     def on_delete_clicked(self):
@@ -140,6 +140,11 @@ class DraggableButton(QPushButton):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        hq_hint = getattr(QPainter, "HighQualityAntialiasing", None)
+        if hq_hint is not None:
+            painter.setRenderHint(hq_hint)
+        path = _r2_path(QRectF(self.rect()), 12)
+        painter.setClipPath(path)
 
         # 保存当前状态
         painter.save()

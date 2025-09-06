@@ -5,11 +5,10 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QToolButton,
     QStyle,
 )
 
-from UI.glass_effect import apply_r2_mask
+from UI.glass_effect import R2PushButton
 
 
 class TitleBar(QFrame):
@@ -23,11 +22,11 @@ class TitleBar(QFrame):
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setStyleSheet(
             "#titleBar{background: transparent;}"
-            "#titleBar QToolButton{background: transparent; border: none;"
+            "#titleBar QPushButton{background: transparent; border: none;"
             "width: 36px; height: 24px; border-radius:4px;}"
-            "#titleBar QToolButton:hover{background: rgba(255,255,255,0.3);}"
-            "#titleBar QToolButton:pressed{background: rgba(255,255,255,0.5);}"
-            "#titleBar QToolButton#closeButton:hover{background: #e81123;}"
+            "#titleBar QPushButton:hover{background: rgba(255,255,255,0.3);}"
+            "#titleBar QPushButton:pressed{background: rgba(255,255,255,0.5);}"
+            "#titleBar QPushButton#closeButton:hover{background: #e81123;}"
         )
 
         layout = QHBoxLayout(self)
@@ -39,29 +38,29 @@ class TitleBar(QFrame):
         layout.addWidget(self._title_label)
         layout.addStretch(1)
 
-        self._min_btn = QToolButton(self)
+        self._min_btn = R2PushButton(radius=4, parent=self)
         self._min_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMinButton))
         self._min_btn.setCursor(Qt.PointingHandCursor)
         self._min_btn.setFixedSize(36, 24)
+        self._min_btn.setStyleSheet("border:none;")
         layout.addWidget(self._min_btn)
-        apply_r2_mask(self._min_btn, 4)
         self._min_btn.clicked.connect(parent.showMinimized)
 
-        self._max_btn = QToolButton(self)
+        self._max_btn = R2PushButton(radius=4, parent=self)
         self._max_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarMaxButton))
         self._max_btn.setCursor(Qt.PointingHandCursor)
         self._max_btn.setFixedSize(36, 24)
+        self._max_btn.setStyleSheet("border:none;")
         layout.addWidget(self._max_btn)
-        apply_r2_mask(self._max_btn, 4)
         self._max_btn.clicked.connect(self._toggle_max)
 
-        self._close_btn = QToolButton(self)
+        self._close_btn = R2PushButton(radius=4, parent=self)
         self._close_btn.setObjectName("closeButton")
         self._close_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarCloseButton))
         self._close_btn.setCursor(Qt.PointingHandCursor)
         self._close_btn.setFixedSize(36, 24)
+        self._close_btn.setStyleSheet("border:none;")
         layout.addWidget(self._close_btn)
-        apply_r2_mask(self._close_btn, 4)
         self._close_btn.clicked.connect(parent.close)
 
         self._drag_pos: QPoint | None = None
@@ -88,7 +87,7 @@ class TitleBar(QFrame):
     def mousePressEvent(self, event):  # type: ignore[override]
         if event.button() == Qt.LeftButton:
             child = self.childAt(event.position().toPoint())
-            if not isinstance(child, QToolButton):
+            if not isinstance(child, R2PushButton):
                 self._drag_pos = event.globalPosition().toPoint()
         super().mousePressEvent(event)
 
@@ -106,6 +105,6 @@ class TitleBar(QFrame):
     def mouseDoubleClickEvent(self, event):  # type: ignore[override]
         if event.button() == Qt.LeftButton:
             child = self.childAt(event.position().toPoint())
-            if not isinstance(child, QToolButton):
+            if not isinstance(child, R2PushButton):
                 self._toggle_max()
         super().mouseDoubleClickEvent(event)

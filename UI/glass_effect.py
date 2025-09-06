@@ -1,23 +1,15 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QRectF, QPropertyAnimation, QSize
-from PySide6.QtGui import (
-    QColor,
-    QPainter,
-    QPainterPath,
-    QBitmap,
-    QImage,
-    QPixmap,
-    QPen,
-    QRegion,
-)
+from PySide6.QtCore import Qt, QRectF, QPropertyAnimation
+from PySide6.QtGui import QColor, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QFrame,
     QPushButton,
     QGraphicsBlurEffect,
     QGraphicsDropShadowEffect,
-    QGraphicsScene,
-    QGraphicsPixmapItem,
+    QStyle,
+    QStyleOptionButton,
+    QStylePainter,
 )
 
 from UI.styles import BACKGROUND_COLOR
@@ -58,64 +50,6 @@ def _r2_path(rect: QRectF, radius: float) -> QPainterPath:
     return path
 
 
-def _feathered_mask(
-    size: QSize, radius: int, scale: int = 32, feather: float = 0.8
-) -> QBitmap:
-    """Return a smoother mask for an R2-rounded rect using heavy oversampling.
-
-    ``scale`` controls the supersampling factor (32 by default) while
-    ``feather`` applies a light blur in the high‑resolution mask before it is
-    downscaled.  The combination yields a noticeably softer edge with fewer
-    visible stair‑step artefacts on dark backgrounds.
-    """
-
-    w, h = size.width() * scale, size.height() * scale
-    image = QImage(w, h, QImage.Format_ARGB32)
-    image.fill(Qt.transparent)
-
-    painter = QPainter(image)
-    painter.setRenderHint(QPainter.Antialiasing)
-    hq_hint = getattr(QPainter, "HighQualityAntialiasing", None)
-    if hq_hint is not None:
-        painter.setRenderHint(hq_hint)
-    path = _r2_path(QRectF(0, 0, w, h), radius * scale)
-    painter.fillPath(path, Qt.white)
-    painter.end()
-
-    if feather > 0:
-        scene = QGraphicsScene()
-        item = QGraphicsPixmapItem(QPixmap.fromImage(image))
-        blur = QGraphicsBlurEffect()
-        blur.setBlurRadius(scale * feather)
-        item.setGraphicsEffect(blur)
-        scene.addItem(item)
-        blurred = QImage(w, h, QImage.Format_ARGB32)
-        blurred.fill(Qt.transparent)
-        p = QPainter(blurred)
-        scene.render(p)
-        p.end()
-        image = blurred
-
-    pix = QPixmap.fromImage(image)
-    pix = pix.scaled(size, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-    alpha = pix.toImage().convertToFormat(QImage.Format_Alpha8)
-    mask = alpha.convertToFormat(
-        QImage.Format_Mono, Qt.ThresholdDither | Qt.AvoidDither
-    )
-    return QBitmap.fromImage(mask)
-
-
-def apply_r2_mask(widget, radius: int) -> None:
-    """Clip ``widget`` to an R2-continuous rounded rectangle mask."""
-    widget.setMask(_feathered_mask(widget.size(), radius))
-
-
-def _region_mask(size: QSize, radius: int) -> QRegion:
-    """Return a QRegion for an R2-rounded rectangle."""
-    path = _r2_path(QRectF(0, 0, size.width(), size.height()), radius)
-    return QRegion(path.toFillPolygon().toPolygon(), Qt.WindingFill)
-
-
 class _R2Frame(QFrame):
     """Frame that paints itself as an R2-continuous rounded rectangle."""
 
@@ -144,7 +78,7 @@ class _R2Frame(QFrame):
 
 
 class R2PushButton(QPushButton):
-    """QPushButton with an R2-continuous mask for smoother corners."""
+    """QPushButton that paints itself with R2-continuous corners."""
 
     def __init__(self, *args, radius: int = 12, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -153,11 +87,23 @@ class R2PushButton(QPushButton):
 
     def setRadius(self, radius: int) -> None:
         self._r2_radius = radius
-        apply_r2_mask(self, self._r2_radius)
+        self.update()
 
-    def resizeEvent(self, event):  # type: ignore[override]
-        super().resizeEvent(event)
-        apply_r2_mask(self, self._r2_radius)
+    def paintEvent(self, event):  # type: ignore[override]
+        painter = QStylePainter(self)
+        option = QStyleOptionButton()
+        option.initFrom(self)
+        option.text = self.text()
+        option.icon = self.icon()
+        option.iconSize = self.iconSize()
+        option.rect = self.rect()
+        painter.setRenderHint(QPainter.Antialiasing)
+        hq_hint = getattr(QPainter, "HighQualityAntialiasing", None)
+        if hq_hint is not None:
+            painter.setRenderHint(hq_hint)
+        path = _r2_path(QRectF(self.rect()), self._r2_radius)
+        painter.setClipPath(path)
+        painter.drawControl(QStyle.CE_PushButton, option)
 
 
 class FrostedGlassMixin:
@@ -200,20 +146,15 @@ class FrostedGlassMixin:
         self._glass_shadow = shadow
         self._glass_base_radius = border_radius
         self._glass_radius = border_radius
-        self._update_mask()
 
     def resizeEvent(self, event):  # type: ignore[override]
         super().resizeEvent(event)
         if hasattr(self, "_glass_container"):
             self._glass_container.setGeometry(self.rect())
             self._glass_bg.setGeometry(self._glass_container.rect())
-            self._update_mask()
 
     def showEvent(self, event):  # type: ignore[override]
-        """Ensure the rounded mask is applied when the window first shows."""
         super().showEvent(event)
-        # Some window managers reset the mask on show, so reapply it here
-        self._update_mask()
 
     def _set_glass_color(self, color: QColor | str) -> None:
         if hasattr(self, "_glass_bg"):
@@ -223,18 +164,11 @@ class FrostedGlassMixin:
         if hasattr(self, "_glass_bg"):
             self._glass_bg.setRadius(radius)
             self._glass_radius = radius
-            self._update_mask()
 
     def _set_shadow_enabled(self, enabled: bool) -> None:
         if hasattr(self, "_glass_shadow"):
             self._glass_shadow.setEnabled(enabled)
 
-    def _update_mask(self) -> None:
-        if getattr(self, "_glass_radius", 0) <= 0:
-            self.clearMask()
-            return
-        # use a feathered bitmap mask for smoother antialiased edges
-        self.setMask(_feathered_mask(self.size(), self._glass_radius))
 
 
 class FadeInWindowMixin:

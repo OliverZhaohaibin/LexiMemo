@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QRectF, QPropertyAnimation
-from PySide6.QtGui import QColor, QPainter, QPainterPath
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QRadialGradient
 from PySide6.QtWidgets import (
     QFrame,
     QPushButton,
@@ -74,7 +74,17 @@ class _R2Frame(QFrame):
         if hq_hint is not None:
             painter.setRenderHint(hq_hint)
         path = _r2_path(QRectF(self.rect()), self._radius)
-        painter.fillPath(path, self._color)
+
+        # draw a radial alpha gradient so the edges fade smoothly without
+        # introducing rectangular corners
+        grad = QRadialGradient(self.rect().center(), max(self.width(), self.height()))
+        opaque = QColor(self._color)
+        transparent = QColor(self._color)
+        transparent.setAlpha(0)
+        grad.setColorAt(0.0, opaque)
+        grad.setColorAt(1.0, transparent)
+
+        painter.fillPath(path, grad)
 
 
 class R2PushButton(QPushButton):

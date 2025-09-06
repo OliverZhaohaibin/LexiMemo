@@ -16,6 +16,8 @@ from PySide6.QtWidgets import (
     QPushButton,
     QGraphicsBlurEffect,
     QGraphicsDropShadowEffect,
+    QGraphicsScene,
+    QGraphicsPixmapItem,
 )
 
 from UI.styles import BACKGROUND_COLOR
@@ -56,17 +58,21 @@ def _r2_path(rect: QRectF, radius: float) -> QPainterPath:
     return path
 
 
-def _feathered_mask(size: QSize, radius: int, scale: int = 16) -> QBitmap:
+def _feathered_mask(
+    size: QSize, radius: int, scale: int = 32, feather: float = 0.8
+) -> QBitmap:
     """Return a smoother mask for an R2-rounded rect using heavy oversampling.
 
-    The default ``scale`` was bumped from ``8`` to ``16`` after visual
-    inspection showed faint jagged pixels against dark backgrounds. The
-    higher oversampling factor generates a much finer bitmap before it is
-    downscaled to the widget size, yielding crisper R2 corners.
+    ``scale`` controls the supersampling factor (32 by default) while
+    ``feather`` applies a light blur in the high‑resolution mask before it is
+    downscaled.  The combination yields a noticeably softer edge with fewer
+    visible stair‑step artefacts on dark backgrounds.
     """
+
     w, h = size.width() * scale, size.height() * scale
     image = QImage(w, h, QImage.Format_ARGB32)
     image.fill(Qt.transparent)
+
     painter = QPainter(image)
     painter.setRenderHint(QPainter.Antialiasing)
     hq_hint = getattr(QPainter, "HighQualityAntialiasing", None)
@@ -75,6 +81,21 @@ def _feathered_mask(size: QSize, radius: int, scale: int = 16) -> QBitmap:
     path = _r2_path(QRectF(0, 0, w, h), radius * scale)
     painter.fillPath(path, Qt.white)
     painter.end()
+
+    if feather > 0:
+        scene = QGraphicsScene()
+        item = QGraphicsPixmapItem(QPixmap.fromImage(image))
+        blur = QGraphicsBlurEffect()
+        blur.setBlurRadius(scale * feather)
+        item.setGraphicsEffect(blur)
+        scene.addItem(item)
+        blurred = QImage(w, h, QImage.Format_ARGB32)
+        blurred.fill(Qt.transparent)
+        p = QPainter(blurred)
+        scene.render(p)
+        p.end()
+        image = blurred
+
     pix = QPixmap.fromImage(image)
     pix = pix.scaled(size, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
     alpha = pix.toImage().convertToFormat(QImage.Format_Alpha8)
@@ -212,7 +233,8 @@ class FrostedGlassMixin:
         if getattr(self, "_glass_radius", 0) <= 0:
             self.clearMask()
             return
-        self.setMask(_region_mask(self.size(), self._glass_radius))
+        # use a feathered bitmap mask for smoother antialiased edges
+        self.setMask(_feathered_mask(self.size(), self._glass_radius))
 
 
 class FadeInWindowMixin:

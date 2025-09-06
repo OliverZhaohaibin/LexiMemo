@@ -9,6 +9,7 @@ from PySide6.QtGui import (
     QImage,
     QPixmap,
     QPen,
+    QRegion,
 )
 from PySide6.QtWidgets import (
     QFrame,
@@ -86,6 +87,12 @@ def _feathered_mask(size: QSize, radius: int, scale: int = 16) -> QBitmap:
 def apply_r2_mask(widget, radius: int) -> None:
     """Clip ``widget`` to an R2-continuous rounded rectangle mask."""
     widget.setMask(_feathered_mask(widget.size(), radius))
+
+
+def _region_mask(size: QSize, radius: int) -> QRegion:
+    """Return a QRegion for an R2-rounded rectangle."""
+    path = _r2_path(QRectF(0, 0, size.width(), size.height()), radius)
+    return QRegion(path.toFillPolygon().toPolygon(), Qt.WindingFill)
 
 
 class _R2Frame(QFrame):
@@ -205,7 +212,7 @@ class FrostedGlassMixin:
         if getattr(self, "_glass_radius", 0) <= 0:
             self.clearMask()
             return
-        self.setMask(_feathered_mask(self.size(), self._glass_radius))
+        self.setMask(_region_mask(self.size(), self._glass_radius))
 
 
 class FadeInWindowMixin:

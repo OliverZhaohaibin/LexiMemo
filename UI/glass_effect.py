@@ -97,8 +97,13 @@ class R2WindowMixin:
     ) -> None:
         self._r2_base_radius = border_radius
         self._r2_radius = border_radius
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setStyleSheet(f"background: {QColor(color).name()};")
+        # Keep the window opaque while still clipping to an R2 mask.
+        # Using a palette-backed fill avoids fully transparent widgets
+        # when no custom painting occurs (common on some platforms).
+        pal = self.palette()
+        pal.setColor(self.backgroundRole(), QColor(color))
+        self.setPalette(pal)
+        self.setAutoFillBackground(True)
         self._update_mask()
 
     def _update_mask(self) -> None:
